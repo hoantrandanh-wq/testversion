@@ -1,27 +1,17 @@
 package com.app.update.model;
 
 public class UpdateInfo {
-    private String version;
+    private String latestVersion;
     private String downloadUrl;
+    private boolean hasUpdate;
 
-    public UpdateInfo(String version, String downloadUrl) {
-        this.version = version;
+    public UpdateInfo(String latestVersion, String downloadUrl, boolean hasUpdate) {
+        this.latestVersion = latestVersion;
         this.downloadUrl = downloadUrl;
+        this.hasUpdate = hasUpdate;
     }
 
-    public String getVersion() {
-        return version;
-    }
-
-    public void setVersion(String version) {
-        this.version = version;
-    }
-
-    public String getDownloadUrl() {
-        return downloadUrl;
-    }
-
-    public void setDownloadUrl(String downloadUrl) {
-        this.downloadUrl = downloadUrl;
-    }
+    public String getLatestVersion() { return latestVersion; }
+    public String getDownloadUrl() { return downloadUrl; }
+    public boolean isHasUpdate() { return hasUpdate; }
 }

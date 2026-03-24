@@ -11,4 +11,13 @@
     <Button text="Say Hello" onAction="#onButtonClick" />
     <Label fx:id="labelResult" text="" style="-fx-font-size: 16px; -fx-font-weight: bold;" />
 
+    <Separator />
+
+    <!-- Phần update -->
+    <Label text="Kiểm tra cập nhật:" />
+    <Button fx:id="btnCheckUpdate" text="🔄 Kiểm tra phiên bản mới"
+            onAction="#onCheckUpdateManual" />
+    <Label fx:id="labelUpdateStatus" text=""
+           style="-fx-text-fill: gray;" />
+
 </VBox>
