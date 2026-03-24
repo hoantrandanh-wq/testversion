@@ -47,8 +47,9 @@ jobs:
         run: choco install wixtoolset -y
 
       - name: Package as EXE
-        run: jpackage --input build\package --name HelloWorldApp --main-jar app-fat-${{ github.ref_name }}.jar --main-class com.app.MainApp --type exe --win-shortcut --app-version ${{ github.ref_name == '' && '1.0' || github.ref_name }} --dest build\installer --module-path "C:\javafx-sdk\lib" --add-modules "javafx.controls,javafx.fxml"
-
+        run: |
+          $version = "${{ github.ref_name }}".TrimStart("v")
+          jpackage --input build\package --name HelloWorldApp --main-jar app-fat-${{ github.ref_name }}.jar --main-class com.app.MainApp --type exe --win-shortcut --app-version $version --dest build\installer --module-path "C:\javafx-sdk\lib" --add-modules "javafx.controls,javafx.fxml"
       - name: Upload Release Asset
         uses: softprops/action-gh-release@v2
         with:
