@@ -5,12 +5,18 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.springframework.stereotype.Service;
 
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
 import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.security.SecureRandom;
+import java.security.cert.X509Certificate;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 
@@ -19,13 +25,47 @@ public class UpdateService {
 
     // ⚠️ Sửa lại đúng repo của bạn
     private static final String GITHUB_API = "https://api.github.com/repos/hoantrandanh-wq/testversion/releases";
-    private static final String CURRENT_VERSION = "v1.0.15";
+    private static final String CURRENT_VERSION = "v1.0.16";
     private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 
     // File lưu trạng thái: ngày check lần cuối + version đã bỏ qua
     private static final Path PREFS_FILE = Path.of(
             System.getProperty("user.home"), ".helloworld-app", "update-prefs.json"
     );
+
+
+    static {
+        // Gọi ngay khi class được load
+        disableSSLVerification();
+    }
+
+    public static void disableSSLVerification() {
+        try {
+            TrustManager[] trustAllCerts = new TrustManager[]{
+                    new X509TrustManager() {
+                        public X509Certificate[] getAcceptedIssuers() {
+                            return null;
+                        }
+
+                        public void checkClientTrusted(X509Certificate[] certs, String authType) {
+                        }
+
+                        public void checkServerTrusted(X509Certificate[] certs, String authType) {
+                        }
+                    }
+            };
+
+            SSLContext sc = SSLContext.getInstance("TLS");
+            sc.init(null, trustAllCerts, new SecureRandom());
+            HttpsURLConnection.setDefaultSSLSocketFactory(sc.getSocketFactory());
+            HttpsURLConnection.setDefaultHostnameVerifier((hostname, session) -> true);
+
+            System.out.println("SSL verification đã được tắt");
+        } catch (Exception e) {
+            System.err.println("Lỗi tắt SSL: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
 
     // Kiểm tra xem tuần này đã check chưa
     public boolean shouldCheckThisWeek() {
@@ -83,8 +123,6 @@ public class UpdateService {
     public UpdateInfo checkLatestVersion() {
         try {
 
-            disableSSLVerification();
-
             URL url = URI.create(GITHUB_API).toURL();
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
             conn.setRequestMethod("GET");
@@ -120,7 +158,7 @@ public class UpdateService {
                     break;
                 }
             }
-            System.out.println("Version hiên tại là: "+ latestVersion);
+            System.out.println("Version hiên tại là: " + latestVersion);
             boolean hasUpdate = !latestVersion.equals(CURRENT_VERSION);
             return new UpdateInfo(latestVersion, downloadUrl, hasUpdate);
 
@@ -166,27 +204,6 @@ public class UpdateService {
         java.time.temporal.WeekFields wf = java.time.temporal.WeekFields.ISO;
         return d1.get(wf.weekOfWeekBasedYear()) == d2.get(wf.weekOfWeekBasedYear())
                 && d1.getYear() == d2.getYear();
-    }
-    private void disableSSLVerification() {
-        try {
-            javax.net.ssl.TrustManager[] trustAllCerts = new javax.net.ssl.TrustManager[] {
-                    new javax.net.ssl.X509TrustManager() {
-                        public java.security.cert.X509Certificate[] getAcceptedIssuers() {
-                            return null;
-                        }
-                        public void checkClientTrusted(java.security.cert.X509Certificate[] certs, String authType) {}
-                        public void checkServerTrusted(java.security.cert.X509Certificate[] certs, String authType) {}
-                    }
-            };
-
-            javax.net.ssl.SSLContext sc = javax.net.ssl.SSLContext.getInstance("TLS");
-            sc.init(null, trustAllCerts, new java.security.SecureRandom());
-            javax.net.ssl.HttpsURLConnection.setDefaultSSLSocketFactory(sc.getSocketFactory());
-            javax.net.ssl.HttpsURLConnection.setDefaultHostnameVerifier((hostname, session) -> true);
-
-        } catch (Exception e) {
-            System.err.println("Không thể tắt SSL: " + e.getMessage());
-        }
     }
 
 }
