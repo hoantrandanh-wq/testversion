@@ -1,0 +1,69 @@
+plugins {
+    id 'java'
+    id 'application'
+    id 'org.springframework.boot' version '3.3.2'
+    id 'io.spring.dependency-management' version '1.1.5'
+    id 'org.openjfx.javafxplugin' version '0.1.0'
+}
+
+group = 'com.app'
+version = '1.0'
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+javafx {
+    version = '21'
+    modules = ['javafx.controls', 'javafx.fxml']
+}
+
+dependencies {
+    // Spring Boot ← THÊM DÒNG NÀY
+    implementation 'org.springframework.boot:spring-boot-starter'
+
+    // Lombok
+    compileOnly 'org.projectlombok:lombok:1.18.32'
+    annotationProcessor 'org.projectlombok:lombok:1.18.32'
+
+    // JSON
+    implementation 'org.json:json:20251224'
+
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+}
+
+application {
+    mainClass = 'com.app.MainApp'
+}
+
+bootJar {
+    archiveBaseName = 'app'
+    archiveVersion = '1.0'
+}
+
+// Fat JAR thường để jpackage dùng
+tasks.register('fatJar', Jar) {
+    archiveBaseName = 'app-fat'
+    archiveVersion = '1.0'
+
+    manifest {
+        attributes 'Main-Class': 'com.app.MainApp'
+    }
+
+    from {
+        configurations.runtimeClasspath.collect {
+            it.isDirectory() ? it : zipTree(it)
+        }
+    }
+
+    with jar
+
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}
