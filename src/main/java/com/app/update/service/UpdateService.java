@@ -5,11 +5,15 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.springframework.stereotype.Service;
 
-import java.io.*;
+import java.io.File;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URL;
-import java.net.URLConnection;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDate;
@@ -20,7 +24,7 @@ public class UpdateService {
 
     // ⚠️ Sửa lại đúng repo của bạn
     private static final String GITHUB_API = "https://api.github.com/repos/hoantrandanh-wq/testversion/releases";
-    private static final String CURRENT_VERSION = "v1.0.17";
+    private static final String CURRENT_VERSION = "v1.0.18";
     private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 
     // File lưu trạng thái: ngày check lần cuối + version đã bỏ qua
@@ -85,28 +89,27 @@ public class UpdateService {
         try {
             System.out.println("Bắt đầu kiểm tra phiên bản...");
 
-            URL url = new URL(GITHUB_API);
-            URLConnection conn = url.openConnection();
-            conn.setConnectTimeout(5000);
-            conn.setReadTimeout(5000);
-            conn.setRequestProperty("Accept", "application/vnd.github.v3+json");
-            conn.setRequestProperty("User-Agent", "Java-App");
+            // Tạo HttpClient không kiểm tra SSL
+            HttpClient client = HttpClient.newBuilder()
+                    .connectTimeout(java.time.Duration.ofSeconds(5))
+                    .build();
 
-            BufferedReader reader = new BufferedReader(
-                    new InputStreamReader(conn.getInputStream())
-            );
-            StringBuilder sb = new StringBuilder();
-            String line;
-            while ((line = reader.readLine()) != null) {
-                sb.append(line);
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(GITHUB_API))
+                    .header("Accept", "application/vnd.github.v3+json")
+                    .header("User-Agent", "Java-App")
+                    .GET()
+                    .build();
+
+            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+
+            if (response.statusCode() != 200) {
+                System.out.println("Lỗi HTTP: " + response.statusCode());
+                return new UpdateInfo(CURRENT_VERSION, "", false);
             }
-            reader.close();
 
-            System.out.println("Phản hồi từ API: " + sb.toString().substring(0, Math.min(100, sb.length())));
-
-            JSONArray releases = new JSONArray(sb.toString());
+            JSONArray releases = new JSONArray(response.body());
             if (releases.isEmpty()) {
-                System.out.println("Không có bản phát hành nào");
                 return new UpdateInfo(CURRENT_VERSION, "", false);
             }
 
@@ -114,7 +117,6 @@ public class UpdateService {
             String latestVersion = latest.getString("tag_name");
             String downloadUrl = "";
 
-            // Lấy URL file .exe trong assets
             JSONArray assets = latest.getJSONArray("assets");
             for (int i = 0; i < assets.length(); i++) {
                 JSONObject asset = assets.getJSONObject(i);
@@ -125,14 +127,11 @@ public class UpdateService {
             }
 
             System.out.println("Phiên bản mới nhất: " + latestVersion);
-            System.out.println("Phiên bản hiện tại: " + CURRENT_VERSION);
-
             boolean hasUpdate = !latestVersion.equals(CURRENT_VERSION);
             return new UpdateInfo(latestVersion, downloadUrl, hasUpdate);
 
         } catch (Exception e) {
-            System.out.println("Lỗi check version: " + e.getClass().getName());
-            System.out.println("Chi tiết: " + e.getMessage());
+            System.out.println("Lỗi check version: " + e.getMessage());
             e.printStackTrace();
             return new UpdateInfo(CURRENT_VERSION, "", false);
         }
