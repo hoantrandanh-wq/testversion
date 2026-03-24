@@ -1,5 +1,8 @@
 package com.app.update.model;
 
+import lombok.Getter;
+
+@Getter
 public class UpdateInfo {
     private String latestVersion;
     private String downloadUrl;
@@ -11,7 +14,4 @@ public class UpdateInfo {
         this.hasUpdate = hasUpdate;
     }
 
-    public String getLatestVersion() { return latestVersion; }
-    public String getDownloadUrl() { return downloadUrl; }
-    public boolean isHasUpdate() { return hasUpdate; }
 }
