@@ -18,8 +18,8 @@ import java.time.format.DateTimeFormatter;
 public class UpdateService {
 
     // ⚠️ Sửa lại đúng repo của bạn
-    private static final String GITHUB_API = "https://github.com/hoantrandanh-wq/testversion/releases";
-    private static final String CURRENT_VERSION = "v1.0.5";
+    private static final String GITHUB_API = "https://api.github.com/repos/hoantrandanh-wq/testversion/releases";
+    private static final String CURRENT_VERSION = "v1.0.6";
     private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 
     // File lưu trạng thái: ngày check lần cuối + version đã bỏ qua
@@ -119,8 +119,7 @@ public class UpdateService {
             }
 
             boolean hasUpdate = !latestVersion.equals(CURRENT_VERSION);
-//            return new UpdateInfo(latestVersion, downloadUrl, hasUpdate);
-            return new UpdateInfo("v9.9.9", "https://example.com/fake.exe", true);
+            return new UpdateInfo(latestVersion, downloadUrl, hasUpdate);
 
         } catch (Exception e) {
             // Không có mạng hoặc lỗi → bỏ qua
