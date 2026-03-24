@@ -45,7 +45,7 @@ public class UpdateController {
         task.setOnSucceeded(e -> {
             UpdateInfo info = task.getValue();
             if (!info.isHasUpdate()) return;
-
+            System.out.println("Giá trị của Update Info là: "+info.toString());
             String skipped = updateService.getSkippedVersion();
             if (info.getLatestVersion().equals(skipped)) return;
 
@@ -56,6 +56,7 @@ public class UpdateController {
     }
 
     public void onCheckUpdateManual() {
+        System.out.println("Kiểm tra phiên bản:");
         btnCheckUpdate.setDisable(true);
         labelUpdateStatus.setText("Đang kiểm tra...");
 
@@ -100,8 +101,10 @@ public class UpdateController {
 
         alert.showAndWait().ifPresent(result -> {
             if (result == btnUpdate) {
+                System.out.println("Thực hiện update");
                 downloadAndInstall(info);
             } else if (result == btnSkip) {
+                System.out.println("Bỏ qua phien ban này");
                 updateService.saveSkippedVersion(info.getLatestVersion());
                 labelUpdateStatus.setText("Đã bỏ qua phiên bản " + info.getLatestVersion());
             }

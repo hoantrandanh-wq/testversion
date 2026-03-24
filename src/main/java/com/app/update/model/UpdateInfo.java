@@ -14,4 +14,12 @@ public class UpdateInfo {
         this.hasUpdate = hasUpdate;
     }
 
+    @Override
+    public String toString() {
+        return "UpdateInfo{" +
+                "latestVersion='" + latestVersion + '\'' +
+                ", downloadUrl='" + downloadUrl + '\'' +
+                ", hasUpdate=" + hasUpdate +
+                '}';
+    }
 }
