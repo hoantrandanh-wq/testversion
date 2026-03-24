@@ -24,18 +24,12 @@ jobs:
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
-        with:
-          gradle-version: '8.7'
 
       - name: Download JavaFX SDK
         run: |
           curl -L "https://download2.gluonhq.com/openjfx/21.0.2/openjfx-21.0.2_windows-x64_bin-sdk.zip" -o javafx.zip
           Expand-Archive -Path javafx.zip -DestinationPath C:\
           Rename-Item "C:\javafx-sdk-21.0.2" "C:\javafx-sdk"
-
-      - name: Grant Gradle permission
-        run: chmod +x gradlew
-        shell: bash
 
       - name: Build fat JAR
         env:
@@ -46,7 +40,6 @@ jobs:
         run: |
           mkdir build\package
           copy build\libs\app-fat-*.jar build\package\
-          xcopy "C:\javafx-sdk\bin" "build\package\" /E /H /Y
 
       - name: Install WiX Toolset
         run: choco install wixtoolset -y
@@ -54,7 +47,8 @@ jobs:
       - name: Package as EXE
         run: |
           $version = "${{ github.ref_name }}".TrimStart("v")
-          jpackage --input build\package --name HelloWorldApp --main-jar app-fat-${{ github.ref_name }}.jar --main-class com.app.MainApp --type exe --win-shortcut --app-version $version --dest build\installer --module-path "C:\javafx-sdk\lib" --add-modules "javafx.controls,javafx.fxml" --java-options "-Djavax.net.ssl.trustStoreType=Windows-ROOT" --java-options "-Dfile.encoding=UTF-8"
+          jpackage --input build\package --name HelloWorldApp --main-jar app-fat-${{ github.ref_name }}.jar --main-class com.app.MainApp --type exe --win-shortcut --app-version $version --dest build\installer --module-path "C:\javafx-sdk\lib" --add-modules javafx.controls,javafx.fxml,java.net.http,jdk.crypto.ec --java-options "-Dfile.encoding=UTF-8"
+
       - name: Upload Release Asset
         uses: softprops/action-gh-release@v2
         with:
