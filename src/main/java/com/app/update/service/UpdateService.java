@@ -19,7 +19,7 @@ public class UpdateService {
 
     // ⚠️ Sửa lại đúng repo của bạn
     private static final String GITHUB_API = "https://api.github.com/repos/hoantrandanh-wq/testversion/releases";
-    private static final String CURRENT_VERSION = "v1.0.9";
+    private static final String CURRENT_VERSION = "v1.0.10";
     private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 
     // File lưu trạng thái: ngày check lần cuối + version đã bỏ qua
@@ -122,6 +122,9 @@ public class UpdateService {
             return new UpdateInfo(latestVersion, downloadUrl, hasUpdate);
 
         } catch (Exception e) {
+            // In ra lỗi thật để debug
+            System.out.println("Lỗi check version: " + e.getClass().getName() + " - " + e.getMessage());
+            e.printStackTrace();
             // Không có mạng hoặc lỗi → bỏ qua
             return new UpdateInfo(CURRENT_VERSION, "", false);
         }
