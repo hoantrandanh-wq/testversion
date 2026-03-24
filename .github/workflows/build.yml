@@ -40,7 +40,7 @@ jobs:
       - name: Prepare package folder
         run: |
           mkdir build\package
-          copy build\libs\app-fat-1.0.jar build\package\
+          copy build\libs\app-fat-*.jar build\package\
           xcopy "C:\javafx-sdk\bin" "build\package\" /E /H /Y
 
       - name: Install WiX Toolset
