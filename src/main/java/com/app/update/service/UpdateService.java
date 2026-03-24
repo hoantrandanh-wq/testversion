@@ -5,18 +5,13 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.springframework.stereotype.Service;
 
-import javax.net.ssl.HttpsURLConnection;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.X509TrustManager;
 import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URL;
+import java.net.URLConnection;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.security.SecureRandom;
-import java.security.cert.X509Certificate;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 
@@ -25,47 +20,13 @@ public class UpdateService {
 
     // ⚠️ Sửa lại đúng repo của bạn
     private static final String GITHUB_API = "https://api.github.com/repos/hoantrandanh-wq/testversion/releases";
-    private static final String CURRENT_VERSION = "v1.0.16";
+    private static final String CURRENT_VERSION = "v1.0.17";
     private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 
     // File lưu trạng thái: ngày check lần cuối + version đã bỏ qua
     private static final Path PREFS_FILE = Path.of(
             System.getProperty("user.home"), ".helloworld-app", "update-prefs.json"
     );
-
-
-    static {
-        // Gọi ngay khi class được load
-        disableSSLVerification();
-    }
-
-    public static void disableSSLVerification() {
-        try {
-            TrustManager[] trustAllCerts = new TrustManager[]{
-                    new X509TrustManager() {
-                        public X509Certificate[] getAcceptedIssuers() {
-                            return null;
-                        }
-
-                        public void checkClientTrusted(X509Certificate[] certs, String authType) {
-                        }
-
-                        public void checkServerTrusted(X509Certificate[] certs, String authType) {
-                        }
-                    }
-            };
-
-            SSLContext sc = SSLContext.getInstance("TLS");
-            sc.init(null, trustAllCerts, new SecureRandom());
-            HttpsURLConnection.setDefaultSSLSocketFactory(sc.getSocketFactory());
-            HttpsURLConnection.setDefaultHostnameVerifier((hostname, session) -> true);
-
-            System.out.println("SSL verification đã được tắt");
-        } catch (Exception e) {
-            System.err.println("Lỗi tắt SSL: " + e.getMessage());
-            e.printStackTrace();
-        }
-    }
 
     // Kiểm tra xem tuần này đã check chưa
     public boolean shouldCheckThisWeek() {
@@ -122,28 +83,32 @@ public class UpdateService {
     // Gọi GitHub API lấy release mới nhất
     public UpdateInfo checkLatestVersion() {
         try {
+            System.out.println("Bắt đầu kiểm tra phiên bản...");
 
-            URL url = URI.create(GITHUB_API).toURL();
-            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-            conn.setRequestMethod("GET");
-            conn.setRequestProperty("Accept", "application/vnd.github.v3+json");
+            URL url = new URL(GITHUB_API);
+            URLConnection conn = url.openConnection();
             conn.setConnectTimeout(5000);
             conn.setReadTimeout(5000);
-
-            if (conn.getResponseCode() != 200) {
-                return new UpdateInfo(CURRENT_VERSION, "", false);
-            }
+            conn.setRequestProperty("Accept", "application/vnd.github.v3+json");
+            conn.setRequestProperty("User-Agent", "Java-App");
 
             BufferedReader reader = new BufferedReader(
                     new InputStreamReader(conn.getInputStream())
             );
             StringBuilder sb = new StringBuilder();
             String line;
-            while ((line = reader.readLine()) != null) sb.append(line);
+            while ((line = reader.readLine()) != null) {
+                sb.append(line);
+            }
             reader.close();
 
+            System.out.println("Phản hồi từ API: " + sb.toString().substring(0, Math.min(100, sb.length())));
+
             JSONArray releases = new JSONArray(sb.toString());
-            if (releases.isEmpty()) return new UpdateInfo(CURRENT_VERSION, "", false);
+            if (releases.isEmpty()) {
+                System.out.println("Không có bản phát hành nào");
+                return new UpdateInfo(CURRENT_VERSION, "", false);
+            }
 
             JSONObject latest = releases.getJSONObject(0);
             String latestVersion = latest.getString("tag_name");
@@ -158,15 +123,17 @@ public class UpdateService {
                     break;
                 }
             }
-            System.out.println("Version hiên tại là: " + latestVersion);
+
+            System.out.println("Phiên bản mới nhất: " + latestVersion);
+            System.out.println("Phiên bản hiện tại: " + CURRENT_VERSION);
+
             boolean hasUpdate = !latestVersion.equals(CURRENT_VERSION);
             return new UpdateInfo(latestVersion, downloadUrl, hasUpdate);
 
         } catch (Exception e) {
-            // In ra lỗi thật để debug
-            System.out.println("Lỗi check version: " + e.getClass().getName() + " - " + e.getMessage());
+            System.out.println("Lỗi check version: " + e.getClass().getName());
+            System.out.println("Chi tiết: " + e.getMessage());
             e.printStackTrace();
-            // Không có mạng hoặc lỗi → bỏ qua
             return new UpdateInfo(CURRENT_VERSION, "", false);
         }
     }
