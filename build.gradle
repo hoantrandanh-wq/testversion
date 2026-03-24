@@ -7,7 +7,7 @@ plugins {
 }
 
 group = 'com.app'
-version = '1.0'
+version = System.getenv("APP_VERSION") ?: '1.0'
 
 java {
     toolchain {
@@ -51,7 +51,6 @@ bootJar {
 // Fat JAR thường để jpackage dùng
 tasks.register('fatJar', Jar) {
     archiveBaseName = 'app-fat'
-    archiveVersion = '1.0'
 
     manifest {
         attributes 'Main-Class': 'com.app.MainApp'
