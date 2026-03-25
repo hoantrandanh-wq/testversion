@@ -37,6 +37,7 @@ dependencies {
 
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    implementation 'com.squareup.okhttp3:okhttp:4.12.0' // thêm dòng này
 }
 
 application {

@@ -1,11 +1,16 @@
 package com.app.update.service;
 
 import com.app.update.model.UpdateInfo;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.springframework.stereotype.Service;
 
-import java.io.*;
+import java.io.File;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URL;
@@ -19,13 +24,17 @@ public class UpdateService {
 
     // ⚠️ Sửa lại đúng repo của bạn
     private static final String GITHUB_API = "https://api.github.com/repos/hoantrandanh-wq/testversion/releases";
-    private static final String CURRENT_VERSION = "v1.0.19";
+    private static final String CURRENT_VERSION = "v1.0.20";
     private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 
     // File lưu trạng thái: ngày check lần cuối + version đã bỏ qua
     private static final Path PREFS_FILE = Path.of(
             System.getProperty("user.home"), ".helloworld-app", "update-prefs.json"
     );
+    private final OkHttpClient httpClient = new OkHttpClient.Builder()
+            .connectTimeout(5, java.util.concurrent.TimeUnit.SECONDS)
+            .readTimeout(5, java.util.concurrent.TimeUnit.SECONDS)
+            .build();
 
     // Kiểm tra xem tuần này đã check chưa
     public boolean shouldCheckThisWeek() {
@@ -82,54 +91,40 @@ public class UpdateService {
     // Gọi GitHub API lấy release mới nhất
     public UpdateInfo checkLatestVersion() {
         try {
+            Request request = new Request.Builder()
+                    .url(GITHUB_API)
+                    .header("Accept", "application/vnd.github.v3+json")
+                    .build();
 
-            System.out.println("Bắt đầu checkLatestVersion  ");
-            URL url = URI.create(GITHUB_API).toURL();
-            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-            conn.setRequestMethod("GET");
-            conn.setRequestProperty("Accept", "application/vnd.github.v3+json");
-            conn.setConnectTimeout(5000);
-            conn.setReadTimeout(5000);
-
-            System.out.println("Trước khi connect API");
-            if (conn.getResponseCode() != 200) {
-                return new UpdateInfo(CURRENT_VERSION, "", false);
-            }
-            System.out.println("Connect API thành công");
-
-            BufferedReader reader = new BufferedReader(
-                    new InputStreamReader(conn.getInputStream())
-            );
-            StringBuilder sb = new StringBuilder();
-            String line;
-            while ((line = reader.readLine()) != null) sb.append(line);
-            reader.close();
-
-            JSONArray releases = new JSONArray(sb.toString());
-            if (releases.isEmpty()) return new UpdateInfo(CURRENT_VERSION, "", false);
-
-            JSONObject latest = releases.getJSONObject(0);
-            String latestVersion = latest.getString("tag_name");
-            String downloadUrl = "";
-
-            // Lấy URL file .exe trong assets
-            JSONArray assets = latest.getJSONArray("assets");
-            for (int i = 0; i < assets.length(); i++) {
-                JSONObject asset = assets.getJSONObject(i);
-                if (asset.getString("name").endsWith(".exe")) {
-                    downloadUrl = asset.getString("browser_download_url");
-                    break;
+            try (Response response = httpClient.newCall(request).execute()) {
+                if (!response.isSuccessful() || response.body() == null) {
+                    return new UpdateInfo(CURRENT_VERSION, "", false);
                 }
+
+                String body = response.body().string();
+                JSONArray releases = new JSONArray(body);
+                if (releases.isEmpty()) return new UpdateInfo(CURRENT_VERSION, "", false);
+
+                JSONObject latest = releases.getJSONObject(0);
+                String latestVersion = latest.getString("tag_name");
+                String downloadUrl = "";
+
+                JSONArray assets = latest.getJSONArray("assets");
+                for (int i = 0; i < assets.length(); i++) {
+                    JSONObject asset = assets.getJSONObject(i);
+                    if (asset.getString("name").endsWith(".exe")) {
+                        downloadUrl = asset.getString("browser_download_url");
+                        break;
+                    }
+                }
+
+                System.out.println("Version mới nhất: " + latestVersion);
+                boolean hasUpdate = !latestVersion.equals(CURRENT_VERSION);
+                return new UpdateInfo(latestVersion, downloadUrl, hasUpdate);
             }
-            System.out.println("Version hiên tại là: "+ latestVersion);
-            boolean hasUpdate = !latestVersion.equals(CURRENT_VERSION);
-            return new UpdateInfo(latestVersion, downloadUrl, hasUpdate);
 
         } catch (Exception e) {
-            // In ra lỗi thật để debug
             System.out.println("Lỗi check version: " + e.getClass().getName() + " - " + e.getMessage());
-            e.printStackTrace();
-            // Không có mạng hoặc lỗi → bỏ qua
             return new UpdateInfo(CURRENT_VERSION, "", false);
         }
     }
