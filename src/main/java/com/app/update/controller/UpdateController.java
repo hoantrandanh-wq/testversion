@@ -45,7 +45,7 @@ public class UpdateController {
         task.setOnSucceeded(e -> {
             UpdateInfo info = task.getValue();
             if (!info.isHasUpdate()) return;
-            System.out.println("Giá trị của Update Info là: "+info.toString());
+            System.out.println("Giá trị của Update Info là: " + info.toString());
             String skipped = updateService.getSkippedVersion();
             if (info.getLatestVersion().equals(skipped)) return;
 
@@ -112,6 +112,7 @@ public class UpdateController {
     }
 
     private void downloadAndInstall(UpdateInfo info) {
+        System.out.println("Đang tải về");
         labelUpdateStatus.setText("Đang tải về...");
         btnCheckUpdate.setDisable(true);
 
@@ -124,10 +125,12 @@ public class UpdateController {
 
         task.setOnSucceeded(e -> Platform.runLater(() -> {
             try {
+                System.out.println("Vào cài đặt");
                 Desktop.getDesktop().open(task.getValue());
                 Platform.exit();
             } catch (Exception ex) {
                 labelUpdateStatus.setText("❌ Lỗi khi mở file cài đặt.");
+                System.out.println("Lỗi cài đặt: " + ex.getClass().getName() + ": " + ex.getMessage());
                 btnCheckUpdate.setDisable(false);
             }
         }));
