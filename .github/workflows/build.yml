@@ -47,6 +47,7 @@ jobs:
           mkdir build\package
           copy build\libs\app-fat-*.jar build\package\
           xcopy "C:\javafx-sdk\bin" "build\package\" /E /H /Y
+          copy "$env:JAVA_HOME\lib\security\cacerts" build\package\cacerts
 
       - name: Install WiX Toolset
         run: choco install wixtoolset -y
@@ -54,7 +55,7 @@ jobs:
       - name: Package as EXE
         run: |
           $version = "${{ github.ref_name }}".TrimStart("v")
-          jpackage --input build\package --name HelloWorldApp --main-jar app-fat-${{ github.ref_name }}.jar --main-class com.app.MainApp --type exe --win-shortcut --app-version $version --dest build\installer --module-path "C:\javafx-sdk\lib" --add-modules "javafx.controls,javafx.fxml" --java-options "-Dfile.encoding=UTF-8"
+          jpackage --input build\package --name HelloWorldApp --main-jar app-fat-${{ github.ref_name }}.jar --main-class com.app.MainApp --type exe --win-shortcut --app-version $version --dest build\installer --module-path "C:\javafx-sdk\lib" --add-modules "javafx.controls,javafx.fxml" --java-options "-Djavax.net.ssl.trustStore=$APPDIR/cacerts" --java-options "-Djavax.net.ssl.trustStorePassword=changeit" --java-options "-Dfile.encoding=UTF-8"
       - name: Upload Release Asset
         uses: softprops/action-gh-release@v2
         with:

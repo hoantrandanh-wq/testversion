@@ -5,15 +5,10 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.springframework.stereotype.Service;
 
-import java.io.File;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URL;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDate;
@@ -24,7 +19,7 @@ public class UpdateService {
 
     // ⚠️ Sửa lại đúng repo của bạn
     private static final String GITHUB_API = "https://api.github.com/repos/hoantrandanh-wq/testversion/releases";
-    private static final String CURRENT_VERSION = "v1.0.18";
+    private static final String CURRENT_VERSION = "v1.0.19";
     private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 
     // File lưu trạng thái: ngày check lần cuối + version đã bỏ qua
@@ -87,36 +82,37 @@ public class UpdateService {
     // Gọi GitHub API lấy release mới nhất
     public UpdateInfo checkLatestVersion() {
         try {
-            System.out.println("Bắt đầu kiểm tra phiên bản...");
 
-            // Tạo HttpClient không kiểm tra SSL
-            HttpClient client = HttpClient.newBuilder()
-                    .connectTimeout(java.time.Duration.ofSeconds(5))
-                    .build();
+            System.out.println("Bắt đầu checkLatestVersion  ");
+            URL url = URI.create(GITHUB_API).toURL();
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            conn.setRequestMethod("GET");
+            conn.setRequestProperty("Accept", "application/vnd.github.v3+json");
+            conn.setConnectTimeout(5000);
+            conn.setReadTimeout(5000);
 
-            HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(GITHUB_API))
-                    .header("Accept", "application/vnd.github.v3+json")
-                    .header("User-Agent", "Java-App")
-                    .GET()
-                    .build();
-
-            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-
-            if (response.statusCode() != 200) {
-                System.out.println("Lỗi HTTP: " + response.statusCode());
+            System.out.println("Trước khi connect API");
+            if (conn.getResponseCode() != 200) {
                 return new UpdateInfo(CURRENT_VERSION, "", false);
             }
+            System.out.println("Connect API thành công");
 
-            JSONArray releases = new JSONArray(response.body());
-            if (releases.isEmpty()) {
-                return new UpdateInfo(CURRENT_VERSION, "", false);
-            }
+            BufferedReader reader = new BufferedReader(
+                    new InputStreamReader(conn.getInputStream())
+            );
+            StringBuilder sb = new StringBuilder();
+            String line;
+            while ((line = reader.readLine()) != null) sb.append(line);
+            reader.close();
+
+            JSONArray releases = new JSONArray(sb.toString());
+            if (releases.isEmpty()) return new UpdateInfo(CURRENT_VERSION, "", false);
 
             JSONObject latest = releases.getJSONObject(0);
             String latestVersion = latest.getString("tag_name");
             String downloadUrl = "";
 
+            // Lấy URL file .exe trong assets
             JSONArray assets = latest.getJSONArray("assets");
             for (int i = 0; i < assets.length(); i++) {
                 JSONObject asset = assets.getJSONObject(i);
@@ -125,14 +121,15 @@ public class UpdateService {
                     break;
                 }
             }
-
-            System.out.println("Phiên bản mới nhất: " + latestVersion);
+            System.out.println("Version hiên tại là: "+ latestVersion);
             boolean hasUpdate = !latestVersion.equals(CURRENT_VERSION);
             return new UpdateInfo(latestVersion, downloadUrl, hasUpdate);
 
         } catch (Exception e) {
-            System.out.println("Lỗi check version: " + e.getMessage());
+            // In ra lỗi thật để debug
+            System.out.println("Lỗi check version: " + e.getClass().getName() + " - " + e.getMessage());
             e.printStackTrace();
+            // Không có mạng hoặc lỗi → bỏ qua
             return new UpdateInfo(CURRENT_VERSION, "", false);
         }
     }
