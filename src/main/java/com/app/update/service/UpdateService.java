@@ -24,7 +24,7 @@ public class UpdateService {
 
     // ⚠️ Sửa lại đúng repo của bạn
     private static final String GITHUB_API = "https://api.github.com/repos/hoantrandanh-wq/testversion/releases";
-    private static final String CURRENT_VERSION = "v1.0.26";
+    private static final String CURRENT_VERSION = "v1.0.27";
     private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 
     // File lưu trạng thái: ngày check lần cuối + version đã bỏ qua
@@ -130,13 +130,13 @@ public class UpdateService {
     }
 
     // Download file .exe mới về Desktop
-    public File downloadInstaller(String downloadUrl) throws Exception {
-        URL url = URI.create(downloadUrl).toURL();
+    public File downloadInstaller(UpdateInfo info) throws Exception {
+        URL url = URI.create(info.getDownloadUrl()).toURL();
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
         conn.setConnectTimeout(10000);
 
         Path dest = Path.of(
-                System.getProperty("user.home"), "Desktop", "HelloWorldApp-update.exe"
+                System.getProperty("user.home"), "Desktop", "HelloWorldApp-update-"+info.getLatestVersion()+".exe"
         );
 
         try (InputStream in = conn.getInputStream();

@@ -117,7 +117,7 @@ public class UpdateController {
         Task<java.io.File> task = new Task<>() {
             @Override
             protected java.io.File call() throws Exception {
-                return updateService.downloadInstaller(info.getDownloadUrl());
+                return updateService.downloadInstaller(info);
             }
         };
 
@@ -125,8 +125,13 @@ public class UpdateController {
             try {
                 System.out.println("Vào cài đặt");
                 File installer = task.getValue();
-                Runtime.getRuntime().exec(new String[]{installer.getAbsolutePath()});
-                Platform.exit();
+                Alert alert = new Alert(Alert.AlertType.INFORMATION);
+                alert.setTitle("Sẵn sàng cài đặt");
+                alert.setHeaderText("Tải về thành công!");
+                alert.setContentText("Installer sẽ mở ra. Sau khi cài xong, vui lòng mở lại app.");
+                alert.showAndWait();
+                new ProcessBuilder(installer.getAbsolutePath())
+                        .start();
                 Platform.exit();
             } catch (Exception ex) {
                 labelUpdateStatus.setText("❌ Lỗi khi mở file cài đặt.");

@@ -24,7 +24,7 @@ public class MainApp extends Application {
         loader.setControllerFactory(springContext::getBean);
 
         stage.setTitle("Hello World App");
-        stage.setScene(new Scene(loader.load(), 400, 200));
+        stage.setScene(new Scene(loader.load(), 600, 300));
         stage.show();
     }
 
