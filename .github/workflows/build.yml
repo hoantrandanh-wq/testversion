@@ -47,8 +47,9 @@ jobs:
           mkdir build\package
           copy build\libs\app-fat-*.jar build\package\
           xcopy "C:\javafx-sdk\bin" "build\package\" /E /H /Y
-          copy src\main\resources\image\icon.ico build\package\icon.ico
-
+      - name: Convert icon
+        run: |
+          magick src\main\resources\image\icon.webp -resize 256x256 build\package\icon.ico
       - name: Install WiX Toolset
         run: choco install wixtoolset -y
 
