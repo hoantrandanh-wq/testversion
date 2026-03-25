@@ -5,12 +5,10 @@ import com.app.update.service.UpdateService;
 import javafx.application.Platform;
 import javafx.concurrent.Task;
 import javafx.scene.control.*;
-import javafx.scene.control.Button;
-import javafx.scene.control.Label;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import java.awt.*;
+import java.io.File;
 
 @Component
 public class UpdateController {
@@ -126,7 +124,9 @@ public class UpdateController {
         task.setOnSucceeded(e -> Platform.runLater(() -> {
             try {
                 System.out.println("Vào cài đặt");
-                Desktop.getDesktop().open(task.getValue());
+                File installer = task.getValue();
+                Runtime.getRuntime().exec(new String[]{installer.getAbsolutePath()});
+                Platform.exit();
                 Platform.exit();
             } catch (Exception ex) {
                 labelUpdateStatus.setText("❌ Lỗi khi mở file cài đặt.");
