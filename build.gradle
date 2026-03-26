@@ -25,19 +25,31 @@ javafx {
 }
 
 dependencies {
-    // Spring Boot ← THÊM DÒNG NÀY
+    // Spring Boot
     implementation 'org.springframework.boot:spring-boot-starter'
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+
+    // SQLite
+    implementation 'org.xerial:sqlite-jdbc:3.46.0.0'
+
+    // Hibernate SQLite dialect
+    implementation 'org.hibernate.orm:hibernate-community-dialects:6.5.2.Final'
+
+    // Flyway
+    implementation 'org.flywaydb:flyway-core:10.15.0'
+
+    // OkHttp
+    implementation 'com.squareup.okhttp3:okhttp:4.12.0'
+
+    // JSON
+    implementation 'org.json:json:20251224'
 
     // Lombok
     compileOnly 'org.projectlombok:lombok:1.18.32'
     annotationProcessor 'org.projectlombok:lombok:1.18.32'
 
-    // JSON
-    implementation 'org.json:json:20251224'
-
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
-    implementation 'com.squareup.okhttp3:okhttp:4.12.0' // thêm dòng này
 }
 
 application {
@@ -49,7 +61,6 @@ bootJar {
     archiveVersion = '1.0'
 }
 
-// Fat JAR thường để jpackage dùng
 tasks.register('fatJar', Jar) {
     archiveBaseName = 'app-fat'
 

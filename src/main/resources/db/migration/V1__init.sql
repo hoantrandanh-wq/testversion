@@ -1,0 +1,7 @@
+CREATE TABLE IF NOT EXISTS greeting (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL
+);
+
+INSERT INTO greeting (name)
+VALUES ('aaa');
