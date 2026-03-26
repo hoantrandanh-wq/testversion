@@ -37,15 +37,15 @@ jobs:
         run: chmod +x gradlew
         shell: bash
 
-      - name: Build fat JAR
+      - name: Build Spring Boot JAR
         env:
           APP_VERSION: ${{ github.ref_name }}
-        run: ./gradlew fatJar
+        run: ./gradlew bootJar
 
       - name: Prepare package folder
         run: |
           mkdir build\package
-          copy build\libs\app-fat-*.jar build\package\
+          copy build\libs\app-*.jar build\package\
           xcopy "C:\javafx-sdk\bin" "build\package\" /E /H /Y
       - name: Convert icon
         run: |
