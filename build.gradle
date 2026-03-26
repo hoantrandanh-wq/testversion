@@ -58,7 +58,7 @@ application {
 
 bootJar {
     archiveBaseName = 'app'
-    archiveVersion = '1.0'
+    archiveVersion = (System.getenv("APP_VERSION") ?: "1.0").replace("v", "")
 }
 
 //tasks.register('fatJar', Jar) {
