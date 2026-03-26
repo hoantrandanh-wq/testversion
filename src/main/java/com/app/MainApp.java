@@ -33,6 +33,13 @@ public class MainApp extends Application {
         System.setProperty("org.sqlite.tmpdir", appDir + "/tmp");
         new java.io.File(appDir + "/tmp").mkdirs();
 
+        // 🔥 (QUAN TRỌNG) force load driver
+        try {
+            Class.forName("org.sqlite.JDBC");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
         // start Spring
         springContext = SpringApplication.run(SpringBootApp.class);
     }
