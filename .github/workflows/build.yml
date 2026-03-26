@@ -37,10 +37,10 @@ jobs:
         run: chmod +x gradlew
         shell: bash
 
-      - name: Build Spring Boot JAR
+      - name: Build shadow JAR
         env:
           APP_VERSION: ${{ github.ref_name }}
-        run: ./gradlew bootJar
+        run: ./gradlew shadowJar
 
       - name: Prepare package folder
         run: |
