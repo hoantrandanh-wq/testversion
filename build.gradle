@@ -76,5 +76,5 @@ tasks.register('fatJar', Jar) {
 
     with jar
 
-    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    duplicatesStrategy = DuplicatesStrategy.INCLUDE
 }
