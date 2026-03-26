@@ -9,9 +9,10 @@ import javafx.scene.Scene;
 import javafx.stage.Stage;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.ThreadContext;
 import org.springframework.boot.SpringApplication;
 import org.springframework.context.ConfigurableApplicationContext;
+
+import java.io.File;
 
 public class MainApp extends Application {
 
@@ -25,11 +26,14 @@ public class MainApp extends Application {
         String appDir = System.getProperty("user.home") + "/.helloworld-app";
 
         // tạo folder
-        java.io.File dir = new java.io.File(appDir);
+        File dir = new File(appDir);
         if (!dir.exists()) dir.mkdirs();
 
+        File logFolder = new File(appDir +"/logs");
+        if (!logFolder.exists()) logFolder.mkdirs();
+
         // 🔥 tạo file DB (QUAN TRỌNG)
-        java.io.File dbFile = new java.io.File(appDir + "/data.db");
+        File dbFile = new File(appDir + "/data.db");
         try {
             if (!dbFile.exists()) {
                 dbFile.createNewFile();
@@ -40,7 +44,7 @@ public class MainApp extends Application {
 
         // fix SQLite native
         System.setProperty("org.sqlite.tmpdir", appDir + "/tmp");
-        new java.io.File(appDir + "/tmp").mkdirs();
+        new File(appDir + "/tmp").mkdirs();
 
         // 🔥 (QUAN TRỌNG) force load driver
         try {
