@@ -29,7 +29,7 @@ public class MainApp extends Application {
         File dir = new File(appDir);
         if (!dir.exists()) dir.mkdirs();
 
-        File logFolder = new File(appDir +"/logs");
+        File logFolder = new File(appDir + "/logs");
         if (!logFolder.exists()) logFolder.mkdirs();
 
         // 🔥 tạo file DB (QUAN TRỌNG)
@@ -108,6 +108,11 @@ public class MainApp extends Application {
     }
 
     public static void main(String[] args) {
+
+        System.out.println(org.slf4j.LoggerFactory.getILoggerFactory().getClass());
+        System.setProperty("log4j.configurationFile", "log4j2-spring.xml");
+
+        System.out.println(org.slf4j.LoggerFactory.getILoggerFactory().getClass());
         launch(args);
     }
 }
