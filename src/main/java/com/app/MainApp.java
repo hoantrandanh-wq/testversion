@@ -11,8 +11,29 @@ public class MainApp extends Application {
 
     private ConfigurableApplicationContext springContext;
 
-    @Override
     public void init() {
+
+        String appDir = System.getProperty("user.home") + "/.helloworld-app";
+
+        // tạo folder
+        java.io.File dir = new java.io.File(appDir);
+        if (!dir.exists()) dir.mkdirs();
+
+        // 🔥 tạo file DB (QUAN TRỌNG)
+        java.io.File dbFile = new java.io.File(appDir + "/data.db");
+        try {
+            if (!dbFile.exists()) {
+                dbFile.createNewFile();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        // fix SQLite native
+        System.setProperty("org.sqlite.tmpdir", appDir + "/tmp");
+        new java.io.File(appDir + "/tmp").mkdirs();
+
+        // start Spring
         springContext = SpringApplication.run(SpringBootApp.class);
     }
 
