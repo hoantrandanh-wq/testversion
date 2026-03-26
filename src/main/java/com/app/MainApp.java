@@ -18,9 +18,6 @@ public class MainApp extends Application {
 
     private ConfigurableApplicationContext springContext;
 
-
-    private static final Logger logger = LogManager.getLogger(MainApp.class);
-
     public void init() {
 
         String appDir = System.getProperty("user.home") + "/.helloworld-app";
@@ -79,6 +76,7 @@ public class MainApp extends Application {
     @Override
     public void start(Stage stage) throws Exception {
 
+        Logger logger = LogManager.getLogger(MainApp.class); // ← khai báo local
 
         // 🔥 4. inject log context vào thread JavaFX
         LogContext.init();
