@@ -108,11 +108,6 @@ public class MainApp extends Application {
     }
 
     public static void main(String[] args) {
-
-        System.out.println(org.slf4j.LoggerFactory.getILoggerFactory().getClass());
-        System.setProperty("log4j.configurationFile", "log4j2-spring.xml");
-
-        System.out.println(org.slf4j.LoggerFactory.getILoggerFactory().getClass());
         launch(args);
     }
 }

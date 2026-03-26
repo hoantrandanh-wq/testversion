@@ -24,7 +24,7 @@ public class UpdateService {
 
     // ⚠️ Sửa lại đúng repo của bạn
     private static final String GITHUB_API = "https://api.github.com/repos/hoantrandanh-wq/testversion/releases";
-    private static final String CURRENT_VERSION = "v1.0.48";
+    private static final String CURRENT_VERSION = "v1.0.49";
     private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 
     // File lưu trạng thái: ngày check lần cuối + version đã bỏ qua
