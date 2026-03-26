@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="WARN">
+
+    <Properties>
+        <Property name="APP_DIR">${sys:user.home}/.helloworld-app</Property>
+        <Property name="LOG_DIR">${APP_DIR}/logs</Property>
+    </Properties>
+
+    <Appenders>
+
+        <!-- Log file chính -->
+        <RollingFile name="FileLogger"
+                     fileName="${LOG_DIR}/app.log"
+                     filePattern="${LOG_DIR}/app-%d{yyyy-MM-dd}-%i.log.gz">
+
+            <PatternLayout>
+                <pattern>
+                    %d{yyyy-MM-dd HH:mm:ss} [%t] %-5level %logger{36}
+                    device=%X{deviceId} version=%X{appVersion} - %msg%n
+                </pattern>
+            </PatternLayout>
+
+            <Policies>
+                <TimeBasedTriggeringPolicy interval="1"/>
+                <SizeBasedTriggeringPolicy size="10MB"/>
+            </Policies>
+
+            <DefaultRolloverStrategy max="7"/>
+
+        </RollingFile>
+
+        <!-- File riêng cho ERROR -->
+        <RollingFile name="ErrorFile"
+                     fileName="${LOG_DIR}/error.log"
+                     filePattern="${LOG_DIR}/error-%d{yyyy-MM-dd}.log.gz">
+
+            <PatternLayout>
+                <pattern>
+                    %d{yyyy-MM-dd HH:mm:ss} [%t] %-5level %logger{36}
+                    device=%X{deviceId} version=%X{appVersion} - %msg%n
+                </pattern>
+            </PatternLayout>
+
+            <Policies>
+                <TimeBasedTriggeringPolicy/>
+            </Policies>
+
+        </RollingFile>
+
+    </Appenders>
+
+    <Loggers>
+
+        <Root level="info">
+            <AppenderRef ref="FileLogger"/>
+            <AppenderRef ref="ErrorFile" level="error"/>
+        </Root>
+
+    </Loggers>
+
+</Configuration>
