@@ -24,7 +24,6 @@ public class UpdateService {
 
     // ⚠️ Sửa lại đúng repo của bạn
     private static final String GITHUB_API = "https://api.github.com/repos/hoantrandanh-wq/testversion/releases";
-    private static final String CURRENT_VERSION = "v1.0.66";
     private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 
     // File lưu trạng thái: ngày check lần cuối + version đã bỏ qua
@@ -90,6 +89,7 @@ public class UpdateService {
 
     // Gọi GitHub API lấy release mới nhất
     public UpdateInfo checkLatestVersion() {
+        String currentVersion = resolveCurrentVersion();
         try {
             Request request = new Request.Builder()
                     .url(GITHUB_API)
@@ -98,12 +98,12 @@ public class UpdateService {
 
             try (Response response = httpClient.newCall(request).execute()) {
                 if (!response.isSuccessful() || response.body() == null) {
-                    return new UpdateInfo(CURRENT_VERSION, "", false);
+                    return new UpdateInfo(currentVersion, "", false);
                 }
 
                 String body = response.body().string();
                 JSONArray releases = new JSONArray(body);
-                if (releases.isEmpty()) return new UpdateInfo(CURRENT_VERSION, "", false);
+                if (releases.isEmpty()) return new UpdateInfo(currentVersion, "", false);
 
                 JSONObject latest = releases.getJSONObject(0);
                 String latestVersion = latest.getString("tag_name");
@@ -119,13 +119,13 @@ public class UpdateService {
                 }
 
                 System.out.println("Version mới nhất: " + latestVersion);
-                boolean hasUpdate = !latestVersion.equals(CURRENT_VERSION);
+                boolean hasUpdate = !latestVersion.equals(currentVersion);
                 return new UpdateInfo(latestVersion, downloadUrl, hasUpdate);
             }
 
         } catch (Exception e) {
             System.out.println("Lỗi check version: " + e.getClass().getName() + " - " + e.getMessage());
-            return new UpdateInfo(CURRENT_VERSION, "", false);
+            return new UpdateInfo(currentVersion, "", false);
         }
     }
 
@@ -155,6 +155,20 @@ public class UpdateService {
         } catch (Exception e) {
             return new JSONObject();
         }
+    }
+
+    private String resolveCurrentVersion() {
+        String version = UpdateService.class.getPackage().getImplementationVersion();
+        if (version == null || version.isBlank()) {
+            version = System.getProperty("app.version", "dev");
+        }
+
+        version = version.trim();
+        if ("dev".equalsIgnoreCase(version)) {
+            return "dev";
+        }
+
+        return version.startsWith("v") ? version : "v" + version;
     }
 
     private boolean isSameWeek(LocalDate d1, LocalDate d2) {

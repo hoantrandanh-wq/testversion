@@ -56,11 +56,24 @@ public class MainApp extends Application {
 
     private static boolean shouldUpdateLogbackConfig(File configFile) {
         if (!configFile.exists()) return true;
-        
+
         try {
             String content = new String(Files.readAllBytes(configFile.toPath()));
+            // Update nếu là file test cũ
             if (content.contains("C:/temp/test.log") || content.contains("C:\\temp\\test.log")) {
-                System.out.println("⚠️ Detected old test logback config, will replace with new one");
+                System.out.println("⚠️ Detected old test logback config, will replace");
+                Files.delete(configFile.toPath());
+                return true;
+            }
+            // Update nếu là config cũ dùng real-time LogglyAppender
+            if (content.contains("LOGGLY_TOKEN") || content.contains("LogglyAppender")) {
+                System.out.println("⚠️ Detected old real-time Loggly config, will replace");
+                Files.delete(configFile.toPath());
+                return true;
+            }
+            // Update nếu là config cũ ghi active error vào error.log cố định
+            if (content.contains("<file>${LOG_DIR}/error.log</file>")) {
+                System.out.println("⚠️ Detected legacy fixed error.log config, will replace");
                 Files.delete(configFile.toPath());
                 return true;
             }
@@ -165,8 +178,6 @@ public class MainApp extends Application {
     public void start(Stage stage) throws Exception {
         LogContext.init();
         log.info("🚀 App started");
-        log.warn("Warning test");
-        log.error("Something went wrong");
 
         FXMLLoader loader = new FXMLLoader(
                 getClass().getResource("/fxml/main.fxml")
