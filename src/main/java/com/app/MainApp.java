@@ -19,7 +19,43 @@ import java.nio.file.Files;
 public class MainApp extends Application {
 
     private ConfigurableApplicationContext springContext;
-    private static final Logger log = LoggerFactory.getLogger(MainApp.class);
+    private final Logger log = LoggerFactory.getLogger(MainApp.class);
+
+    public static void main(String[] args) {
+        setupLoggingConfig();
+        launch(args);
+    }
+
+    private static void setupLoggingConfig() {
+        String appDir = System.getProperty("user.home") + "/.helloworld-app";
+        String configDir = appDir + "/config";
+
+        // Tạo thư mục và file log trước khi Spring Boot khởi tạo logging
+        File appDirFile = new File(appDir);
+        if (!appDirFile.exists()) appDirFile.mkdirs();
+
+        File logFolder = new File(appDir + "/logs");
+        if (!logFolder.exists()) logFolder.mkdirs();
+
+        File configFolder = new File(configDir);
+        if (!configFolder.exists()) configFolder.mkdirs();
+
+        File configFile = new File(configDir + "/logback.xml");
+        if (!configFile.exists()) {
+            try (InputStream is = MainApp.class.getClassLoader().getResourceAsStream("logback-spring.xml")) {
+                if (is != null) {
+                    Files.copy(is, configFile.toPath());
+                    System.out.println("✅ Created default logback config");
+                } else {
+                    System.err.println("⚠️ logback-spring.xml not found in classpath");
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+
+        System.setProperty("logging.config", configFile.getAbsolutePath());
+    }
 
     public void init() {
 
@@ -56,22 +92,6 @@ public class MainApp extends Application {
         } catch (Exception e) {
             e.printStackTrace();
         }
-
-        File configFile = new File(configDir + "/logback.xml");
-
-        if (!configFile.exists()) {
-            try (InputStream is =
-                         MainApp.class.getClassLoader().getResourceAsStream("logback-spring.xml")) {
-
-                Files.copy(is, configFile.toPath());
-                System.out.println("✅ Created default logback config");
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
-
-        // ✅ dùng file config ngoài
-        System.setProperty("logging.config", configDir + "/logback.xml");
 
         DeviceIdManager deviceIdManager = new DeviceIdManager(appDir);
         AppContext.DEVICE_ID = deviceIdManager.getDeviceId();
@@ -124,9 +144,5 @@ public class MainApp extends Application {
     @Override
     public void stop() {
         springContext.close();
-    }
-
-    public static void main(String[] args) {
-        launch(args);
     }
 }
