@@ -40,16 +40,18 @@ jobs:
       - name: Build shadow JAR
         env:
           APP_VERSION: ${{ github.ref_name }}
-        run: ./gradlew shadowJar
+        run: ./gradlew clean shadowJar
 
       - name: Prepare package folder
         run: |
           mkdir build\package
           copy build\libs\app-*.jar build\package\
           xcopy "C:\javafx-sdk\bin" "build\package\" /E /H /Y
+
       - name: Convert icon
         run: |
           magick src\main\resources\image\icon.webp -resize 256x256 build\package\icon.ico
+
       - name: Install WiX Toolset
         run: choco install wixtoolset -y
 
@@ -57,6 +59,7 @@ jobs:
         run: |
           $version = "${{ github.ref_name }}".TrimStart("v")
           jpackage --input build\package --name HelloWorldApp --main-jar app-$version.jar --main-class com.app.MainApp --type exe --win-shortcut --app-version $version --icon build\package\icon.ico --vendor "Hoanvuive" --dest build\installer --module-path "C:\javafx-sdk\lib" --add-modules "javafx.controls,javafx.fxml,java.sql,java.naming,java.instrument" --jlink-options "--bind-services" --java-options "-Dfile.encoding=UTF-8"
+
       - name: Upload Release Asset
         uses: softprops/action-gh-release@v2
         with:
