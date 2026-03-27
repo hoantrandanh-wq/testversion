@@ -7,8 +7,8 @@ import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.boot.SpringApplication;
 import org.springframework.context.ConfigurableApplicationContext;
 
@@ -17,6 +17,7 @@ import java.io.File;
 public class MainApp extends Application {
 
     private ConfigurableApplicationContext springContext;
+    private static final Logger log = LoggerFactory.getLogger(MainApp.class);
 
     public void init() {
 
@@ -69,20 +70,18 @@ public class MainApp extends Application {
         System.out.println("DeviceId: " + AppContext.DEVICE_ID);
         System.out.println("Version: " + AppContext.VERSION);
 
+        LogContext.init();
         // start Spring
         springContext = SpringApplication.run(SpringBootApp.class);
     }
 
     @Override
     public void start(Stage stage) throws Exception {
-
-        Logger logger = LogManager.getLogger(MainApp.class); // ← khai báo local
-
-        // 🔥 4. inject log context vào thread JavaFX
         LogContext.init();
-        logger.info("🚀 App started");
-        logger.warn("Warning test");
-        logger.error("Something went wrong");
+        log.info("🚀 App started");
+        log.warn("Warning test");
+        log.error("Something went wrong");
+
         FXMLLoader loader = new FXMLLoader(
                 getClass().getResource("/fxml/main.fxml")
         );

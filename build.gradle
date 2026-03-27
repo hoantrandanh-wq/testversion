@@ -27,32 +27,32 @@ javafx {
 }
 
 dependencies {
-    // Spring Boot
-    implementation 'org.springframework.boot:spring-boot-starter'
-    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
-    implementation 'org.springframework.boot:spring-boot-starter-log4j2'
 
-    // SQLite
+    // ✅ Spring Boot core (có sẵn Logback)
+    implementation 'org.springframework.boot:spring-boot-starter'
+
+    // ✅ JDBC (nhẹ hơn JPA)
+    implementation 'org.springframework.boot:spring-boot-starter-jdbc'
+
+    // ✅ SQLite
     implementation 'org.xerial:sqlite-jdbc:3.46.0.0'
 
-    // Hibernate SQLite dialect
-    implementation 'org.hibernate.orm:hibernate-community-dialects:6.5.2.Final'
-
-    // Flyway
+    // ✅ Flyway (optional - nếu bạn dùng migration)
     implementation 'org.flywaydb:flyway-core:10.15.0'
 
-    // OkHttp
+    // ✅ HTTP client
     implementation 'com.squareup.okhttp3:okhttp:4.12.0'
 
-    // JSON
+    // ✅ JSON
     implementation 'org.json:json:20251224'
 
-    // Lombok
+    // ✅ Lombok
     compileOnly 'org.projectlombok:lombok:1.18.32'
     annotationProcessor 'org.projectlombok:lombok:1.18.32'
 
-    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+    // Test
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
 application {
@@ -65,49 +65,28 @@ bootJar {
 
     manifest {
         attributes(
+                "Main-Class": "com.app.MainApp",
                 "Implementation-Version": archiveVersion
         )
     }
 }
 
-configurations.all {
-    exclude group: 'org.springframework.boot', module: 'spring-boot-starter-logging'
-    exclude group: 'ch.qos.logback', module: 'logback-classic'
-}
-
 shadowJar {
     archiveBaseName.set('app')
     archiveVersion.set((System.getenv("APP_VERSION") ?: "1.0").replace("v", ""))
-    archiveClassifier.set("") // 🔥 bỏ "-all"
+    archiveClassifier.set("")
 
     manifest {
-        attributes('Main-Class': 'com.app.MainApp',
+        attributes(
+                'Main-Class': 'com.app.MainApp',
                 'Implementation-Version': archiveVersion.get()
         )
     }
 
-    // 🔥 QUAN TRỌNG NHẤT
+    // 🔥 cực quan trọng
     mergeServiceFiles()
 }
 
 build {
     dependsOn shadowJar
 }
-
-//tasks.register('fatJar', Jar) {
-//    archiveBaseName = 'app-fat'
-//
-//    manifest {
-//        attributes 'Main-Class': 'com.app.MainApp'
-//    }
-//
-//    from {
-//        configurations.runtimeClasspath.collect {
-//            it.isDirectory() ? it : zipTree(it)
-//        }
-//    }
-//
-//    with jar
-//
-//    duplicatesStrategy = DuplicatesStrategy.INCLUDE
-//}

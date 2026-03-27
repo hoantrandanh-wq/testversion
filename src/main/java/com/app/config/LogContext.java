@@ -1,15 +1,15 @@
 package com.app.config;
 
-import org.apache.logging.log4j.ThreadContext;
+import org.slf4j.MDC;
 
 public class LogContext {
 
     public static void init() {
-        ThreadContext.put("deviceId", AppContext.DEVICE_ID);
-        ThreadContext.put("appVersion", AppContext.VERSION);
+        MDC.put("deviceId", AppContext.DEVICE_ID);
+        MDC.put("appVersion", AppContext.VERSION);
     }
 
     public static void clear() {
-        ThreadContext.clearAll();
+        MDC.clear();
     }
 }
