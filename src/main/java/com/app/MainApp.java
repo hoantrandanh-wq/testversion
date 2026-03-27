@@ -13,6 +13,8 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.context.ConfigurableApplicationContext;
 
 import java.io.File;
+import java.io.InputStream;
+import java.nio.file.Files;
 
 public class MainApp extends Application {
 
@@ -22,6 +24,7 @@ public class MainApp extends Application {
     public void init() {
 
         String appDir = System.getProperty("user.home") + "/.helloworld-app";
+        String configDir = appDir + "/config";
 
         // tạo folder
         File dir = new File(appDir);
@@ -29,6 +32,9 @@ public class MainApp extends Application {
 
         File logFolder = new File(appDir + "/logs");
         if (!logFolder.exists()) logFolder.mkdirs();
+
+        File configFolder = new File(configDir);
+        if (!configFolder.exists()) configFolder.mkdirs();
 
         // 🔥 tạo file DB (QUAN TRỌNG)
         File dbFile = new File(appDir + "/data.db");
@@ -50,6 +56,22 @@ public class MainApp extends Application {
         } catch (Exception e) {
             e.printStackTrace();
         }
+
+        File configFile = new File(configDir + "/logback.xml");
+
+        if (!configFile.exists()) {
+            try (InputStream is =
+                         MainApp.class.getClassLoader().getResourceAsStream("logback-spring.xml")) {
+
+                Files.copy(is, configFile.toPath());
+                System.out.println("✅ Created default logback config");
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+
+        // ✅ dùng file config ngoài
+        System.setProperty("logging.config", configDir + "/logback.xml");
 
         DeviceIdManager deviceIdManager = new DeviceIdManager(appDir);
         AppContext.DEVICE_ID = deviceIdManager.getDeviceId();
