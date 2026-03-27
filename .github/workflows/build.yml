@@ -58,7 +58,7 @@ jobs:
       - name: Package as EXE
         run: |
           $version = "${{ github.ref_name }}".TrimStart("v")
-          jpackage --input build\package --name HelloWorldApp --main-jar app-$version.jar --main-class com.app.MainApp --type exe --win-shortcut --app-version $version --icon build\package\icon.ico --vendor "Hoanvuive" --dest build\installer --module-path "C:\javafx-sdk\lib" --add-modules "javafx.controls,javafx.fxml,java.sql,java.naming,java.instrument,--add-modules "javafx.controls,javafx.fxml,java.sql,java.naming,java.instrument,java.logging"" --jlink-options "--bind-services" --java-options "-Dlogging.config=classpath:logback-spring.xml -Dfile.encoding=UTF-8" --java-options "-Dfile.encoding=UTF-8"
+          jpackage --input build\package --name HelloWorldApp --main-jar app-$version.jar --main-class com.app.MainApp --type exe --win-shortcut --app-version $version --icon build\package\icon.ico --vendor "Hoanvuive" --dest build\installer --module-path "C:\javafx-sdk\lib" --add-modules "javafx.controls,javafx.fxml,java.sql,java.naming,java.instrument,--add-modules "javafx.controls,javafx.fxml,java.sql,java.naming,java.instrument,java.logging" --jlink-options "--bind-services" --java-options "-Dlogging.config=classpath:logback-spring.xml -Dfile.encoding=UTF-8" --java-options "-Dfile.encoding=UTF-8"
 
       - name: Upload Release Asset
         uses: softprops/action-gh-release@v2
