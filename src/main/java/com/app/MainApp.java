@@ -32,112 +32,99 @@ public class MainApp extends Application {
     private static void setupLoggingConfig() {
         String appDir = System.getProperty("user.home") + "/.helloworld-app";
         String configDir = appDir + "/config";
-
-        // Tạo thư mục và file log trước khi Spring Boot khởi tạo logging
-        File appDirFile = new File(appDir);
-        if (!appDirFile.exists()) appDirFile.mkdirs();
-
-        File logFolder = new File(appDir + "/logs");
-        if (!logFolder.exists()) logFolder.mkdirs();
-
-        File configFolder = new File(configDir);
-        if (!configFolder.exists()) configFolder.mkdirs();
-
         File configFile = new File(configDir + "/logback.xml");
+
+        ensureDirectoriesExist(appDir, configDir);
         
-        // Luôn force copy từ resource nếu detect file cũ (có content khác)
-        boolean needsUpdate = true;
-        if (configFile.exists()) {
-            try {
-                String content = new String(Files.readAllBytes(configFile.toPath()));
-                // Nếu file cũ là test file (C:/temp/test.log), xóa nó để copy lại
-                if (content.contains("C:/temp/test.log") || content.contains("C:\\temp\\test.log")) {
-                    System.out.println("⚠️ Detected old test logback config, will replace with new one");
-                    Files.delete(configFile.toPath());
-                    needsUpdate = true;
-                } else {
-                    needsUpdate = false;
-                }
-            } catch (Exception e) {
-                needsUpdate = true;
-            }
-        }
-        
-        if (needsUpdate) {
-            try (InputStream is = MainApp.class.getClassLoader().getResourceAsStream("logback-spring.xml")) {
-                if (is != null) {
-                    Files.copy(is, configFile.toPath());
-                    System.out.println("✅ Created default logback config at: " + configFile.getAbsolutePath());
-                } else {
-                    System.err.println("⚠️ logback-spring.xml not found via getResourceAsStream, trying alternative method");
-                    // Fallback: copy từ classpath resource loader
-                    ClassLoader loader = Thread.currentThread().getContextClassLoader();
-                    try (InputStream is2 = loader.getResourceAsStream("logback-spring.xml")) {
-                        if (is2 != null) {
-                            Files.copy(is2, configFile.toPath());
-                            System.out.println("✅ Created logback config (via context classloader)");
-                        } else {
-                            System.err.println("❌ logback-spring.xml not found in any classpath");
-                        }
-                    }
-                }
-            } catch (Exception e) {
-                System.err.println("❌ Failed to copy logback config:");
-                e.printStackTrace();
-            }
+        if (shouldUpdateLogbackConfig(configFile)) {
+            copyLogbackConfigFromResource(configFile);
         } else {
             System.out.println("✅ Using existing logback config at: " + configFile.getAbsolutePath());
         }
 
-        // Set property TRƯỚC khi logger được sử dụng
         System.setProperty("logging.config", configFile.getAbsolutePath());
         System.out.println("✅ Set logging.config to: " + configFile.getAbsolutePath());
+        
+        reloadLogbackConfiguration(configFile);
+    }
 
-        // Force logback reload config từ file
+    private static void ensureDirectoriesExist(String appDir, String configDir) {
+        new File(appDir).mkdirs();
+        new File(appDir + "/logs").mkdirs();
+        new File(configDir).mkdirs();
+    }
+
+    private static boolean shouldUpdateLogbackConfig(File configFile) {
+        if (!configFile.exists()) return true;
+        
+        try {
+            String content = new String(Files.readAllBytes(configFile.toPath()));
+            if (content.contains("C:/temp/test.log") || content.contains("C:\\temp\\test.log")) {
+                System.out.println("⚠️ Detected old test logback config, will replace with new one");
+                Files.delete(configFile.toPath());
+                return true;
+            }
+            return false;
+        } catch (Exception e) {
+            return true;
+        }
+    }
+
+    private static void copyLogbackConfigFromResource(File configFile) {
+        InputStream is = tryGetResource("logback-spring.xml", MainApp.class.getClassLoader());
+        
+        if (is == null) {
+            is = tryGetResource("logback-spring.xml", Thread.currentThread().getContextClassLoader());
+        }
+        
+        if (is == null) {
+            System.err.println("❌ logback-spring.xml not found in any classpath");
+            return;
+        }
+        
+        try (InputStream resource = is) {
+            Files.copy(resource, configFile.toPath());
+            System.out.println("✅ Created logback config at: " + configFile.getAbsolutePath());
+        } catch (Exception e) {
+            System.err.println("❌ Failed to copy logback config: " + e.getMessage());
+        }
+    }
+
+    private static InputStream tryGetResource(String resourceName, ClassLoader classLoader) {
+        try {
+            return classLoader.getResourceAsStream(resourceName);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    private static void reloadLogbackConfiguration(File configFile) {
         try {
             LoggerContext loggerContext = (LoggerContext) LoggerFactory.getILoggerFactory();
-            
-            // Reset config hiện tại
             loggerContext.reset();
-            System.out.println("✅ Reset LoggerContext");
             
-            // Load config từ file
             JoranConfigurator configurator = new JoranConfigurator();
             configurator.setContext(loggerContext);
             configurator.doConfigure(configFile);
-            System.out.println("✅ Loaded logback config from file");
             
-            // Print status nếu có lỗi
+            System.out.println("✅ Logback config loaded successfully");
             StatusPrinter.print(loggerContext);
         } catch (Exception e) {
-            System.err.println("❌ Failed to configure logback:");
-            e.printStackTrace();
+            System.err.println("❌ Failed to configure logback: " + e.getMessage());
         }
     }
 
     public void init() {
-
         String appDir = System.getProperty("user.home") + "/.helloworld-app";
-        String configDir = appDir + "/config";
 
-        // tạo folder
-        File dir = new File(appDir);
-        if (!dir.exists()) dir.mkdirs();
-
-        File logFolder = new File(appDir + "/logs");
-        if (!logFolder.exists()) logFolder.mkdirs();
-
-        File configFolder = new File(configDir);
-        if (!configFolder.exists()) configFolder.mkdirs();
+        ensureDirectoriesExist(appDir, appDir + "/config");
 
         // 🔥 tạo file DB (QUAN TRỌNG)
         File dbFile = new File(appDir + "/data.db");
         try {
-            if (!dbFile.exists()) {
-                dbFile.createNewFile();
-            }
+            if (!dbFile.exists()) dbFile.createNewFile();
         } catch (Exception e) {
-            e.printStackTrace();
+            System.err.println("Failed to create DB file: " + e.getMessage());
         }
 
         // fix SQLite native
@@ -148,31 +135,30 @@ public class MainApp extends Application {
         try {
             Class.forName("org.sqlite.JDBC");
         } catch (Exception e) {
-            e.printStackTrace();
+            System.err.println("Failed to load SQLite driver: " + e.getMessage());
         }
 
+        initializeAppContext(appDir);
+        
+        // start Spring
+        springContext = SpringApplication.run(SpringBootApp.class);
+    }
+
+    private void initializeAppContext(String appDir) {
         DeviceIdManager deviceIdManager = new DeviceIdManager(appDir);
         AppContext.DEVICE_ID = deviceIdManager.getDeviceId();
 
-        // 🔥 3. VERSION (từ manifest)
-        String version = MainApp.class
-                .getPackage()
-                .getImplementationVersion();
-
+        String version = MainApp.class.getPackage().getImplementationVersion();
         if (version == null) {
             version = System.getProperty("app.version", "dev");
         }
-
         AppContext.VERSION = version;
 
-        // Debug
         System.out.println("AppDir: " + appDir);
         System.out.println("DeviceId: " + AppContext.DEVICE_ID);
         System.out.println("Version: " + AppContext.VERSION);
 
         LogContext.init();
-        // start Spring
-        springContext = SpringApplication.run(SpringBootApp.class);
     }
 
     @Override
