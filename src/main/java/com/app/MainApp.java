@@ -15,6 +15,9 @@ import org.springframework.context.ConfigurableApplicationContext;
 import java.io.File;
 import java.io.InputStream;
 import java.nio.file.Files;
+import ch.qos.logback.classic.LoggerContext;
+import ch.qos.logback.classic.joran.JoranConfigurator;
+import ch.qos.logback.core.util.StatusPrinter;
 
 public class MainApp extends Application {
 
@@ -41,20 +44,75 @@ public class MainApp extends Application {
         if (!configFolder.exists()) configFolder.mkdirs();
 
         File configFile = new File(configDir + "/logback.xml");
-        if (!configFile.exists()) {
+        
+        // Luôn force copy từ resource nếu detect file cũ (có content khác)
+        boolean needsUpdate = true;
+        if (configFile.exists()) {
+            try {
+                String content = new String(Files.readAllBytes(configFile.toPath()));
+                // Nếu file cũ là test file (C:/temp/test.log), xóa nó để copy lại
+                if (content.contains("C:/temp/test.log") || content.contains("C:\\temp\\test.log")) {
+                    System.out.println("⚠️ Detected old test logback config, will replace with new one");
+                    Files.delete(configFile.toPath());
+                    needsUpdate = true;
+                } else {
+                    needsUpdate = false;
+                }
+            } catch (Exception e) {
+                needsUpdate = true;
+            }
+        }
+        
+        if (needsUpdate) {
             try (InputStream is = MainApp.class.getClassLoader().getResourceAsStream("logback-spring.xml")) {
                 if (is != null) {
                     Files.copy(is, configFile.toPath());
-                    System.out.println("✅ Created default logback config");
+                    System.out.println("✅ Created default logback config at: " + configFile.getAbsolutePath());
                 } else {
-                    System.err.println("⚠️ logback-spring.xml not found in classpath");
+                    System.err.println("⚠️ logback-spring.xml not found via getResourceAsStream, trying alternative method");
+                    // Fallback: copy từ classpath resource loader
+                    ClassLoader loader = Thread.currentThread().getContextClassLoader();
+                    try (InputStream is2 = loader.getResourceAsStream("logback-spring.xml")) {
+                        if (is2 != null) {
+                            Files.copy(is2, configFile.toPath());
+                            System.out.println("✅ Created logback config (via context classloader)");
+                        } else {
+                            System.err.println("❌ logback-spring.xml not found in any classpath");
+                        }
+                    }
                 }
             } catch (Exception e) {
+                System.err.println("❌ Failed to copy logback config:");
                 e.printStackTrace();
             }
+        } else {
+            System.out.println("✅ Using existing logback config at: " + configFile.getAbsolutePath());
         }
 
+        // Set property TRƯỚC khi logger được sử dụng
         System.setProperty("logging.config", configFile.getAbsolutePath());
+        System.out.println("✅ Set logging.config to: " + configFile.getAbsolutePath());
+
+        // Force logback reload config từ file
+        try {
+            LoggerContext loggerContext = (LoggerContext) LoggerFactory.getILoggerFactory();
+            
+            // Reset config hiện tại
+            loggerContext.reset();
+            System.out.println("✅ Reset LoggerContext");
+            
+            // Load config từ file
+            JoranConfigurator configurator = new JoranConfigurator();
+            configurator.setContext(loggerContext);
+            configurator.doConfigure(configFile);
+            System.out.println("✅ Loaded logback config from file");
+            
+            // Print status nếu có lỗi
+            StatusPrinter.print(loggerContext);
+        } catch (Exception e) {
+            System.err.println("❌ Failed to configure logback:");
+            e.printStackTrace();
+        }
     }
 
     public void init() {
