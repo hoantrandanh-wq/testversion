@@ -59,7 +59,7 @@ jobs:
         run: |
           $version = "${{ github.ref_name }}".TrimStart("v")
           jpackage  --input build\package  --name HelloWorldApp  --main-jar app-$version.jar  --main-class com.app.MainApp  --type exe  --win-shortcut  --app-version $version  --icon build\package\icon.ico  --vendor "Hoanvuive"  --dest build\installer  --module-path "C:\javafx-sdk\lib"  --add-modules "javafx.controls,javafx.fxml,java.sql,java.naming,java.logging"  --jlink-options "--strip-debug --compress=2 --no-header-files --no-man-pages --bind-services"  --java-options "-Dlogging.config=classpath:logback-spring.xml -Dfile.encoding=UTF-8"
-Error: Process completed with exit code 1.
+
       - name: Upload Release Asset
         uses: softprops/action-gh-release@v2
         with:
