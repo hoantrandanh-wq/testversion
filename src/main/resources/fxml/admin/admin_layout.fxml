@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<BorderPane xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.app.admin.controller.AdminLayoutController"
+            stylesheets="@/css/admin.css"
+            styleClass="root">
+
+    <top>
+        <HBox alignment="CENTER_LEFT" spacing="10" styleClass="top-bar">
+            <padding>
+                <Insets top="10" right="15" bottom="10" left="15"/>
+            </padding>
+
+            <MenuButton fx:id="userMenu" styleClass="user-menu">
+                <items>
+                    <MenuItem text="Info" onAction="#onUserInfo"/>
+                    <MenuItem text="Logout" onAction="#logout"/>
+                </items>
+            </MenuButton>
+
+            <Region HBox.hgrow="ALWAYS"/>
+
+            <Button fx:id="btnCheckUpdate"
+                    text="🔄 Check update"
+                    onAction="#onCheckUpdateManual"
+                    styleClass="btn-update"/>
+
+            <Label fx:id="labelUpdateStatus" styleClass="update-status"/>
+        </HBox>
+    </top>
+
+    <left>
+        <VBox spacing="10" styleClass="sidebar">
+            <padding>
+                <Insets top="15" left="10"/>
+            </padding>
+
+            <Label text="MENU" styleClass="sidebar-title"/>
+
+            <Button text="Dashboard"
+                    fx:id="btnDashboard"
+                    onAction="#goDashboard"
+                    styleClass="menu-btn"/>
+
+            <Button text="User"
+                    fx:id="btnUser"
+                    onAction="#goUser"
+                    styleClass="menu-btn"/>
+        </VBox>
+    </left>
+
+    <center>
+        <StackPane fx:id="contentArea" styleClass="content"/>
+    </center>
+
+</BorderPane>

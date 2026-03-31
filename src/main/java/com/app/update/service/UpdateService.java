@@ -22,11 +22,9 @@ import java.time.format.DateTimeFormatter;
 @Service
 public class UpdateService {
 
-    // ⚠️ Sửa lại đúng repo của bạn
     private static final String GITHUB_API = "https://api.github.com/repos/hoantrandanh-wq/testversion/releases";
     private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 
-    // File lưu trạng thái: ngày check lần cuối + version đã bỏ qua
     private static final Path PREFS_FILE = Path.of(
             System.getProperty("user.home"), ".helloworld-app", "update-prefs.json"
     );
@@ -35,7 +33,6 @@ public class UpdateService {
             .readTimeout(5, java.util.concurrent.TimeUnit.SECONDS)
             .build();
 
-    // Kiểm tra xem tuần này đã check chưa
     public boolean shouldCheckThisWeek() {
         try {
             if (!Files.exists(PREFS_FILE)) return true;
@@ -46,14 +43,12 @@ public class UpdateService {
             LocalDate lastCheck = LocalDate.parse(prefs.getString("lastCheckDate"), FORMATTER);
             LocalDate now = LocalDate.now();
 
-            // Khác tuần thì check lại
             return !isSameWeek(lastCheck, now);
         } catch (Exception e) {
             return true;
         }
     }
 
-    // Lưu ngày check hôm nay
     public void saveCheckDate() {
         try {
             Files.createDirectories(PREFS_FILE.getParent());
@@ -65,7 +60,6 @@ public class UpdateService {
         }
     }
 
-    // Lưu version người dùng đã bỏ qua
     public void saveSkippedVersion(String version) {
         try {
             Files.createDirectories(PREFS_FILE.getParent());
@@ -77,7 +71,6 @@ public class UpdateService {
         }
     }
 
-    // Lấy version đã bỏ qua
     public String getSkippedVersion() {
         try {
             JSONObject prefs = loadPrefs();
@@ -87,7 +80,6 @@ public class UpdateService {
         }
     }
 
-    // Gọi GitHub API lấy release mới nhất
     public UpdateInfo checkLatestVersion() {
         String currentVersion = resolveCurrentVersion();
         try {
@@ -129,7 +121,6 @@ public class UpdateService {
         }
     }
 
-    // Download file .exe mới về Desktop
     public File downloadInstaller(UpdateInfo info) throws Exception {
         URL url = URI.create(info.getDownloadUrl()).toURL();
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
@@ -145,8 +136,6 @@ public class UpdateService {
         }
         return dest.toFile();
     }
-
-    // --- Helpers ---
 
     private JSONObject loadPrefs() {
         try {
@@ -172,7 +161,6 @@ public class UpdateService {
     }
 
     private boolean isSameWeek(LocalDate d1, LocalDate d2) {
-        // Cùng năm và cùng số tuần trong năm
         java.time.temporal.WeekFields wf = java.time.temporal.WeekFields.ISO;
         return d1.get(wf.weekOfWeekBasedYear()) == d2.get(wf.weekOfWeekBasedYear())
                 && d1.getYear() == d2.getYear();

@@ -1,0 +1,33 @@
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.VBox?>
+<StackPane xmlns:fx="http://javafx.com/fxml"
+           fx:controller="com.app.auth.controller.LoginController"
+           stylesheets="@/css/login.css"
+           styleClass="root">
+
+    <VBox spacing="15" alignment="CENTER" styleClass="login-card">
+        <padding>
+            <Insets top="30" right="40" bottom="30" left="40"/>
+        </padding>
+
+        <Label text="Sign in" styleClass="title"/>
+
+        <TextField fx:id="username"
+                   promptText="Username"
+                   styleClass="input"/>
+
+        <PasswordField fx:id="password"
+                       promptText="Password"
+                       styleClass="input"/>
+
+
+        <Label fx:id="message" styleClass="message-error"/>
+
+        <Button text="Sign in"
+                onAction="#handleLogin"
+                styleClass="login-btn"/>
+
+    </VBox>
+</StackPane>

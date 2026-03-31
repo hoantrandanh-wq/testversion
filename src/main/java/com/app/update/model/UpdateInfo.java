@@ -4,22 +4,13 @@ import lombok.Getter;
 
 @Getter
 public class UpdateInfo {
-    private String latestVersion;
-    private String downloadUrl;
-    private boolean hasUpdate;
+    private final String latestVersion;
+    private final String downloadUrl;
+    private final boolean hasUpdate;
 
     public UpdateInfo(String latestVersion, String downloadUrl, boolean hasUpdate) {
         this.latestVersion = latestVersion;
         this.downloadUrl = downloadUrl;
         this.hasUpdate = hasUpdate;
-    }
-
-    @Override
-    public String toString() {
-        return "UpdateInfo{" +
-                "latestVersion='" + latestVersion + '\'' +
-                ", downloadUrl='" + downloadUrl + '\'' +
-                ", hasUpdate=" + hasUpdate +
-                '}';
     }
 }
