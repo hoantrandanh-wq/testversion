@@ -1,7 +1,9 @@
 package com.app.admin.controller;
 
 import com.app.MainApp;
+import com.app.common.i18n.I18n;
 import com.app.common.session.Session;
+import com.app.common.theme.ThemeManager;
 import com.app.common.ui.BaseLayoutController;
 import com.app.common.ui.ViewLoader;
 import com.app.update.controller.UpdateController;
@@ -36,6 +38,14 @@ public class AdminLayoutController extends BaseLayoutController {
     private Button btnDashboard;
     @FXML
     private Button btnUser;
+    @FXML
+    private Button btnEnglish;
+    @FXML
+    private Button btnVietnamese;
+    @FXML
+    private Button btnLightTheme;
+    @FXML
+    private Button btnDarkTheme;
 
     public AdminLayoutController(ViewLoader viewLoader, UpdateController updateController) {
         super(viewLoader);
@@ -49,9 +59,12 @@ public class AdminLayoutController extends BaseLayoutController {
         return contentArea;
     }
 
-    @Override
     protected List<Button> getMenuButtons() {
         return List.of(btnDashboard, btnUser);
+    }
+
+    protected List<Button> getLangButtons() {
+        return List.of(btnEnglish, btnVietnamese);
     }
 
     // ── Init ────────────────────────────────────────────────────────────────
@@ -62,10 +75,15 @@ public class AdminLayoutController extends BaseLayoutController {
         updateController.setOnCheckEnd(() -> btnCheckUpdate.setDisable(false));
         updateController.setOnStatusChange(msg -> labelUpdateStatus.setText(msg));
 
-        userMenu.setText("Hi, " + Session.getUser().getUsername());
+        userMenu.setText(I18n.get("top.hello", Session.getUser().getUsername()));
 
         setContent(loadView("/fxml/admin/dashboard.fxml"));
-        setActiveMenu(btnDashboard);
+        setActiveButton(getMenuButtons(), btnDashboard);
+
+        String lang = I18n.getLocale().getLanguage();
+        setActiveButton(getLangButtons(), "vi".equals(lang) ? btnVietnamese : btnEnglish);
+
+        updateThemeButtons();
     }
 
     // ── Menu handlers ───────────────────────────────────────────────────────
@@ -73,12 +91,12 @@ public class AdminLayoutController extends BaseLayoutController {
     @FXML
     public void goDashboard() {
         setContent(loadView("/fxml/admin/dashboard.fxml"));
-        setActiveMenu(btnDashboard);
+        setActiveButton(getMenuButtons(), btnDashboard);
     }
 
     @FXML
     private void goUser() {
-        setActiveMenu(btnUser);
+        setActiveButton(getMenuButtons(), btnUser);
         if (Session.isAdmin()) {
             setContent(loadView("/fxml/user/user.fxml"));
         } else {
@@ -88,7 +106,7 @@ public class AdminLayoutController extends BaseLayoutController {
 
     @FXML
     private void onUserInfo() {
-        setActiveMenu(btnUser);
+        setActiveButton(getMenuButtons(), btnUser);
         openMyProfile();
     }
 
@@ -117,5 +135,44 @@ public class AdminLayoutController extends BaseLayoutController {
         controller.setUser(Session.getUser());
 
         setContent(result.node());
+    }
+
+    @FXML
+    private void switchToEnglish() {
+        I18n.setLocale(java.util.Locale.forLanguageTag("en"));
+        reloadUI();
+        setActiveButton(getLangButtons(), btnEnglish);
+    }
+
+    @FXML
+    private void switchToVietnamese() {
+        I18n.setLocale(java.util.Locale.forLanguageTag("vi"));
+        reloadUI();
+        setActiveButton(getLangButtons(), btnVietnamese);
+    }
+
+    @FXML
+    private void switchToLightTheme() {
+        ThemeManager.setTheme(ThemeManager.THEME_LIGHT);
+        ThemeManager.apply(MainApp.getScene());
+        updateThemeButtons();
+    }
+
+    @FXML
+    private void switchToDarkTheme() {
+        ThemeManager.setTheme(ThemeManager.THEME_DARK);
+        ThemeManager.apply(MainApp.getScene());
+        updateThemeButtons();
+    }
+
+    private void updateThemeButtons() {
+        boolean isDark = ThemeManager.THEME_DARK.equals(ThemeManager.getTheme());
+        btnDarkTheme.getStyleClass().removeAll("theme-btn-active");
+        btnLightTheme.getStyleClass().removeAll("theme-btn-active");
+        if (isDark) {
+            btnDarkTheme.getStyleClass().add("theme-btn-active");
+        } else {
+            btnLightTheme.getStyleClass().add("theme-btn-active");
+        }
     }
 }

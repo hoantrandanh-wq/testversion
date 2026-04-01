@@ -1,6 +1,7 @@
 package com.app.common.ui;
 
 import com.app.common.helper.SpringContextHolder;
+import com.app.common.i18n.I18n;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Node;
 import org.slf4j.Logger;
@@ -19,11 +20,15 @@ public class ViewLoader {
 
     public <T> LoadResult<T> loadWithController(String fxml, BaseLayoutController layoutController) {
         try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource(fxml));
+            FXMLLoader loader = new FXMLLoader(getClass().getResource(fxml), I18n.getBundle());
             loader.setControllerFactory(SpringContextHolder::getBean);
 
             Node node = loader.load();
             T controller = loader.getController();
+
+            if (controller instanceof BaseLayoutController base) {
+                base.setFxmlPath(fxml);
+            }
 
             if (layoutController != null && controller instanceof LayoutAware la) {
                 la.setLayoutController(layoutController);

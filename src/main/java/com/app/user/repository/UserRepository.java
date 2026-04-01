@@ -6,6 +6,8 @@ import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.List;
 import java.util.Optional;
 
@@ -18,79 +20,76 @@ public class UserRepository {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    private User mapRow(java.sql.ResultSet rs, int rowNum) throws java.sql.SQLException {
-        User u = new User();
-        u.setId(rs.getLong("id"));
-        u.setUsername(rs.getString("username"));
-        u.setPassword(rs.getString("password"));
-        u.setRole(Role.valueOf(rs.getString("role")));
-        return u;
-    }
+    // ── Query ────────────────────────────────────────────────────────────────
 
     public List<User> findAll() {
-        String sql = "SELECT id, username, password, role FROM user";
-
-        return jdbcTemplate.query(sql, this::mapRow);
+        return jdbcTemplate.query(
+                "SELECT id, username, password, role FROM user",
+                this::mapRow
+        );
     }
 
     public Optional<User> findById(Long id) {
-        String sql = "SELECT id, username, password, role FROM user WHERE id = ?";
-
         try {
-            User user = jdbcTemplate.queryForObject(sql, this::mapRow, id);
-            return Optional.ofNullable(user);
+            return Optional.ofNullable(jdbcTemplate.queryForObject(
+                    "SELECT id, username, password, role FROM user WHERE id = ?",
+                    this::mapRow, id
+            ));
         } catch (EmptyResultDataAccessException e) {
             return Optional.empty();
         }
     }
 
     public Optional<User> findByUsername(String username) {
-        String sql = "SELECT id, username, password, role FROM user WHERE username = ?";
-
         try {
-            User user = jdbcTemplate.queryForObject(sql, this::mapRow, username);
-            return Optional.ofNullable(user);
+            return Optional.ofNullable(jdbcTemplate.queryForObject(
+                    "SELECT id, username, password, role FROM user WHERE username = ?",
+                    this::mapRow, username
+            ));
         } catch (EmptyResultDataAccessException e) {
             return Optional.empty();
         }
     }
 
-    public Optional<User> findUserByUserName(String username) {
-        return findByUsername(username);
-    }
-
     public boolean existsByUsername(String username) {
-        String sql = "SELECT COUNT(*) FROM user WHERE username = ?";
-        Integer count = jdbcTemplate.queryForObject(sql, Integer.class, username);
+        Integer count = jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM user WHERE username = ?",
+                Integer.class, username
+        );
         return count > 0;
     }
 
+    // ── Persist ──────────────────────────────────────────────────────────────
+
     public User save(User user) {
         if (user.getId() == null) {
-            String sql = "INSERT INTO user(username, password, role) VALUES (?, ?, ?)";
-            jdbcTemplate.update(sql,
-                    user.getUsername(),
-                    user.getPassword(),
-                    user.getRole().name()
+            jdbcTemplate.update(
+                    "INSERT INTO user(username, password, role) VALUES (?, ?, ?)",
+                    user.getUsername(), user.getPassword(), user.getRole().name()
             );
-
             Long id = jdbcTemplate.queryForObject("SELECT last_insert_rowid()", Long.class);
             user.setId(id);
-
         } else {
-            String sql = "UPDATE user SET password = ?, role = ? WHERE id = ?";
-            jdbcTemplate.update(sql,
-                    user.getPassword(),
-                    user.getRole().name(),
-                    user.getId()
+            jdbcTemplate.update(
+                    "UPDATE user SET password = ?, role = ? WHERE id = ?",
+                    user.getPassword(), user.getRole().name(), user.getId()
             );
         }
-
         return user;
     }
 
     public void deleteById(Long id) {
-        String sql = "DELETE FROM user WHERE id = ?";
-        jdbcTemplate.update(sql, id);
+        jdbcTemplate.update("DELETE FROM user WHERE id = ?", id);
+    }
+
+    // ── Mapping ──────────────────────────────────────────────────────────────
+
+    private User mapRow(ResultSet rs, int rowNum) throws SQLException {
+        User u = new User();
+        u.setId(rs.getLong("id"));
+        u.setUsername(rs.getString("username"));
+        u.setPassword(rs.getString("password"));
+        u.setRole(Role.valueOf(rs.getString("role")));
+        return u;
     }
 }

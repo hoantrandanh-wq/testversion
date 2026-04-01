@@ -3,36 +3,45 @@ package com.app;
 import com.app.common.config.AppRuntimeInitializer;
 import com.app.common.config.LogContext;
 import com.app.common.config.LogbackConfigInitializer;
+import com.app.common.css.CssLoader;
 import com.app.common.helper.SpringContextHolder;
+import com.app.common.i18n.I18n;
+import com.app.common.theme.ThemeManager;
+import com.app.common.ui.NavigationService;
+import com.app.common.ui.ViewLoader;
 import com.app.file.service.DataFolderManager;
 import javafx.application.Application;
-import javafx.fxml.FXMLLoader;
+import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
+import lombok.Getter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.SpringApplication;
 import org.springframework.context.ConfigurableApplicationContext;
-import org.springframework.security.crypto.bcrypt.BCrypt;
 
 public class MainApp extends Application {
 
+    private static final Logger log = LoggerFactory.getLogger(MainApp.class);
+
     private ConfigurableApplicationContext springContext;
-    private final Logger log = LoggerFactory.getLogger(MainApp.class);
     private DataFolderManager dataFolderManager;
+
+    @Getter
     private static Stage primaryStage;
+    @Getter
+    private static Scene scene;
 
     public static void main(String[] args) {
-        System.out.println(BCrypt.hashpw("admin123", BCrypt.gensalt()));
         LogbackConfigInitializer.initialize();
         launch(args);
     }
 
+    @Override
     public void init() {
         AppRuntimeInitializer.initialize();
-
         springContext = SpringApplication.run(SpringBootApp.class);
-
         dataFolderManager = springContext.getBean(DataFolderManager.class);
         dataFolderManager.init();
     }
@@ -41,41 +50,62 @@ public class MainApp extends Application {
     public void start(Stage stage) {
         primaryStage = stage;
         LogContext.init();
-        log.info("🚀 App started");
+        I18n.loadSavedLocale();
 
+        scene = new Scene(new StackPane());
+        primaryStage.setScene(scene);
+
+        CssLoader.applyBase(scene);
+        ThemeManager.apply(scene);
+
+        log.info("App started");
         showLogin();
     }
 
     @Override
     public void stop() {
-        if (dataFolderManager != null) {
-            dataFolderManager.shutdown();
-        }
-        springContext.close();
+        if (dataFolderManager != null) dataFolderManager.shutdown();
+        if (springContext != null) springContext.close();
+        log.info("App stopped");
     }
 
     public static void showLogin() {
-        loadScene("/fxml/auth/login.fxml", "BDMA", 400, 300);
+        loadAndNavigate("/fxml/auth/login.fxml", "BDMA", 400, 300);
     }
 
     public static void showAdmin() {
-        loadScene("/fxml/admin/admin_layout.fxml", "BDMA", 1200, 800);
+        loadAndNavigate("/fxml/admin/admin_layout.fxml", "BDMA", 1200, 800);
     }
 
-    private static void loadScene(String fxml, String title, int w, int h) {
+    private static void loadAndNavigate(String fxml, String title, int w, int h) {
         try {
-            FXMLLoader loader = new FXMLLoader(MainApp.class.getResource(fxml));
+            ViewLoader viewLoader = SpringContextHolder.getBean(ViewLoader.class);
+            var result = viewLoader.loadWithController(fxml, null);
 
-            loader.setControllerFactory(SpringContextHolder::getBean);
+            if (result == null || result.node() == null) {
+                log.error("View loading returned null for: {}", fxml);
+                return;
+            }
 
-            Scene scene = new Scene(loader.load(), w, h);
+            Parent root = (Parent) result.node();
 
-            primaryStage.setScene(scene);
+            if (fxml.contains("login")) {
+                NavigationService.goToLogin(root);
+            } else {
+                NavigationService.goToAdmin(root);
+            }
+
             primaryStage.setTitle(title);
+            primaryStage.setWidth(w);
+            primaryStage.setHeight(h);
+
+            if (primaryStage.getScene() == null) {
+                primaryStage.setScene(scene);
+            }
             primaryStage.show();
 
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("Failed to load scene: {}", fxml, e);
         }
     }
 }

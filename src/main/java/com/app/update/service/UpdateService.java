@@ -1,11 +1,14 @@
 package com.app.update.service;
 
+import com.app.common.config.AppPaths;
 import com.app.update.model.UpdateInfo;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.io.File;
@@ -18,32 +21,33 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.WeekFields;
+import java.util.concurrent.TimeUnit;
 
 @Service
 public class UpdateService {
 
+    private static final Logger log = LoggerFactory.getLogger(UpdateService.class);
+
     private static final String GITHUB_API = "https://api.github.com/repos/hoantrandanh-wq/testversion/releases";
     private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+    private static final Path PREFS_FILE = Path.of(AppPaths.configDir(), "update-prefs.json");
 
-    private static final Path PREFS_FILE = Path.of(
-            System.getProperty("user.home"), ".helloworld-app", "update-prefs.json"
-    );
     private final OkHttpClient httpClient = new OkHttpClient.Builder()
-            .connectTimeout(5, java.util.concurrent.TimeUnit.SECONDS)
-            .readTimeout(5, java.util.concurrent.TimeUnit.SECONDS)
+            .connectTimeout(5, TimeUnit.SECONDS)
+            .readTimeout(5, TimeUnit.SECONDS)
             .build();
+
+    // ── Check schedule ───────────────────────────────────────────────────────
 
     public boolean shouldCheckThisWeek() {
         try {
             if (!Files.exists(PREFS_FILE)) return true;
-            String content = Files.readString(PREFS_FILE);
-            JSONObject prefs = new JSONObject(content);
+            JSONObject prefs = new JSONObject(Files.readString(PREFS_FILE));
             if (!prefs.has("lastCheckDate")) return true;
 
             LocalDate lastCheck = LocalDate.parse(prefs.getString("lastCheckDate"), FORMATTER);
-            LocalDate now = LocalDate.now();
-
-            return !isSameWeek(lastCheck, now);
+            return !isSameWeek(lastCheck, LocalDate.now());
         } catch (Exception e) {
             return true;
         }
@@ -51,34 +55,35 @@ public class UpdateService {
 
     public void saveCheckDate() {
         try {
-            Files.createDirectories(PREFS_FILE.getParent());
             JSONObject prefs = loadPrefs();
             prefs.put("lastCheckDate", LocalDate.now().format(FORMATTER));
-            Files.writeString(PREFS_FILE, prefs.toString());
+            savePrefs(prefs);
         } catch (Exception e) {
-            e.printStackTrace();
+            log.warn("Failed to save check date", e);
         }
     }
 
+    // ── Skipped version ──────────────────────────────────────────────────────
+
     public void saveSkippedVersion(String version) {
         try {
-            Files.createDirectories(PREFS_FILE.getParent());
             JSONObject prefs = loadPrefs();
             prefs.put("skippedVersion", version);
-            Files.writeString(PREFS_FILE, prefs.toString());
+            savePrefs(prefs);
         } catch (Exception e) {
-            e.printStackTrace();
+            log.warn("Failed to save skipped version", e);
         }
     }
 
     public String getSkippedVersion() {
         try {
-            JSONObject prefs = loadPrefs();
-            return prefs.optString("skippedVersion", "");
+            return loadPrefs().optString("skippedVersion", "");
         } catch (Exception e) {
             return "";
         }
     }
+
+    // ── Version check ────────────────────────────────────────────────────────
 
     public UpdateInfo checkLatestVersion() {
         String currentVersion = resolveCurrentVersion();
@@ -93,8 +98,7 @@ public class UpdateService {
                     return new UpdateInfo(currentVersion, "", false);
                 }
 
-                String body = response.body().string();
-                JSONArray releases = new JSONArray(body);
+                JSONArray releases = new JSONArray(response.body().string());
                 if (releases.isEmpty()) return new UpdateInfo(currentVersion, "", false);
 
                 JSONObject latest = releases.getJSONObject(0);
@@ -110,32 +114,41 @@ public class UpdateService {
                     }
                 }
 
-                System.out.println("Version mới nhất: " + latestVersion);
                 boolean hasUpdate = !latestVersion.equals(currentVersion);
+                log.info("Version check — current: {}, latest: {}, hasUpdate: {}",
+                        currentVersion, latestVersion, hasUpdate);
+
                 return new UpdateInfo(latestVersion, downloadUrl, hasUpdate);
             }
 
         } catch (Exception e) {
-            System.out.println("Lỗi check version: " + e.getClass().getName() + " - " + e.getMessage());
+            log.warn("Failed to check latest version", e);
             return new UpdateInfo(currentVersion, "", false);
         }
     }
 
+    // ── Download ─────────────────────────────────────────────────────────────
+
     public File downloadInstaller(UpdateInfo info) throws Exception {
-        URL url = URI.create(info.getDownloadUrl()).toURL();
+        URL url = URI.create(info.downloadUrl()).toURL();
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-        conn.setConnectTimeout(10000);
+        conn.setConnectTimeout(10_000);
 
         Path dest = Path.of(
-                System.getProperty("user.home"), "Desktop", "HelloWorldApp-update-"+info.getLatestVersion()+".exe"
+                System.getProperty("user.home"), "Desktop",
+                "HelloWorldApp-update-" + info.latestVersion() + ".exe"
         );
 
         try (InputStream in = conn.getInputStream();
              OutputStream out = Files.newOutputStream(dest)) {
             in.transferTo(out);
         }
+
+        log.info("Installer downloaded to: {}", dest);
         return dest.toFile();
     }
+
+    // ── Private ──────────────────────────────────────────────────────────────
 
     private JSONObject loadPrefs() {
         try {
@@ -146,6 +159,11 @@ public class UpdateService {
         }
     }
 
+    private void savePrefs(JSONObject prefs) throws Exception {
+        Files.createDirectories(PREFS_FILE.getParent());
+        Files.writeString(PREFS_FILE, prefs.toString());
+    }
+
     private String resolveCurrentVersion() {
         String version = UpdateService.class.getPackage().getImplementationVersion();
         if (version == null || version.isBlank()) {
@@ -153,17 +171,14 @@ public class UpdateService {
         }
 
         version = version.trim();
-        if ("dev".equalsIgnoreCase(version)) {
-            return "dev";
-        }
+        if ("dev".equalsIgnoreCase(version)) return "dev";
 
         return version.startsWith("v") ? version : "v" + version;
     }
 
     private boolean isSameWeek(LocalDate d1, LocalDate d2) {
-        java.time.temporal.WeekFields wf = java.time.temporal.WeekFields.ISO;
+        WeekFields wf = WeekFields.ISO;
         return d1.get(wf.weekOfWeekBasedYear()) == d2.get(wf.weekOfWeekBasedYear())
                 && d1.getYear() == d2.getYear();
     }
-
 }

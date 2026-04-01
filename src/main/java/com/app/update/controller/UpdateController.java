@@ -1,5 +1,6 @@
 package com.app.update.controller;
 
+import com.app.common.i18n.I18n;
 import com.app.update.model.UpdateInfo;
 import com.app.update.service.UpdateService;
 import javafx.application.Platform;
@@ -48,10 +49,10 @@ public class UpdateController {
 
         task.setOnSucceeded(e -> {
             UpdateInfo info = task.getValue();
-            if (!info.isHasUpdate()) return;
+            if (!info.hasUpdate()) return;
 
             String skipped = updateService.getSkippedVersion();
-            if (info.getLatestVersion().equals(skipped)) return;
+            if (info.latestVersion().equals(skipped)) return;
 
             Platform.runLater(() -> showUpdateDialog(info));
         });
@@ -61,7 +62,7 @@ public class UpdateController {
 
     public void onCheckUpdateManual() {
         if (onCheckStart != null) onCheckStart.run();
-        updateStatus("Đang kiểm tra...");
+        updateStatus(I18n.get("update.checking"));
 
         Task<UpdateInfo> task = new Task<>() {
             @Override
@@ -74,10 +75,10 @@ public class UpdateController {
             UpdateInfo info = task.getValue();
             Platform.runLater(() -> {
                 if (onCheckEnd != null) onCheckEnd.run();
-                if (!info.isHasUpdate()) {
-                    updateStatus("Bạn đang dùng phiên bản mới nhất!");
+                if (!info.hasUpdate()) {
+                    updateStatus(I18n.get("update.latest"));
                 } else {
-                    updateStatus("Có phiên bản mới: " + info.getLatestVersion());
+                    updateStatus(I18n.get("update.available", info.latestVersion()));
                     showUpdateDialog(info);
                 }
             });
@@ -85,7 +86,7 @@ public class UpdateController {
 
         task.setOnFailed(e -> Platform.runLater(() -> {
             if (onCheckEnd != null) onCheckEnd.run();
-            updateStatus("Không thể kiểm tra. Vui lòng thử lại.");
+            updateStatus(I18n.get("update.failed"));
             log.warn("Update check failed", task.getException());
         }));
 
@@ -100,28 +101,28 @@ public class UpdateController {
 
     private void showUpdateDialog(UpdateInfo info) {
         Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
-        alert.setTitle("Có phiên bản mới!");
-        alert.setHeaderText("Phiên bản " + info.getLatestVersion() + " đã có sẵn");
-        alert.setContentText("Bạn có muốn tải về và cài đặt không?");
+        alert.setTitle(I18n.get("update.title"));
+        alert.setHeaderText(I18n.get("update.header", info.latestVersion()));
+        alert.setContentText(I18n.get("update.content"));
 
-        ButtonType btnUpdate = new ButtonType("Cập nhật ngay");
-        ButtonType btnSkip = new ButtonType("Bỏ qua phiên bản này");
-        ButtonType btnLater = new ButtonType("Để sau", ButtonBar.ButtonData.CANCEL_CLOSE);
+        ButtonType btnUpdate = new ButtonType(I18n.get("update.btn.update"));
+        ButtonType btnSkip = new ButtonType(I18n.get("update.btn.skip"));
+        ButtonType btnLater = new ButtonType(I18n.get("update.btn.later"), ButtonBar.ButtonData.CANCEL_CLOSE);
         alert.getButtonTypes().setAll(btnUpdate, btnSkip, btnLater);
 
         alert.showAndWait().ifPresent(result -> {
             if (result == btnUpdate) {
-                log.info("User chose to update to version {}", info.getLatestVersion());
+                log.info("User chose to update to version {}", info.latestVersion());
                 downloadAndInstall(info);
             } else if (result == btnSkip) {
-                log.info("User skipped version {}", info.getLatestVersion());
-                updateService.saveSkippedVersion(info.getLatestVersion());
+                log.info("User skipped version {}", info.latestVersion());
+                updateService.saveSkippedVersion(info.latestVersion());
             }
         });
     }
 
     private void downloadAndInstall(UpdateInfo info) {
-        log.info("Downloading installer for version {}", info.getLatestVersion());
+        log.info("Downloading installer for version {}", info.latestVersion());
 
         Task<File> task = new Task<>() {
             @Override
@@ -136,9 +137,9 @@ public class UpdateController {
                 log.info("Installer downloaded: {}", installer.getAbsolutePath());
 
                 Alert alert = new Alert(Alert.AlertType.INFORMATION);
-                alert.setTitle("Sẵn sàng cài đặt");
-                alert.setHeaderText("Tải về thành công!");
-                alert.setContentText("Installer sẽ mở ra. Sau khi cài xong, vui lòng mở lại app.");
+                alert.setTitle(I18n.get("update.install.ready"));
+                alert.setHeaderText(I18n.get("update.install.success"));
+                alert.setContentText(I18n.get("update.install.content"));
                 alert.showAndWait();
 
                 new ProcessBuilder(installer.getAbsolutePath()).start();

@@ -1,8 +1,10 @@
 package com.app.user.controller;
 
-import com.app.common.helper.SpringContextHolder;
+import com.app.common.enums.Role;
+import com.app.common.i18n.I18n;
 import com.app.common.session.Session;
 import com.app.common.ui.BaseLayoutController;
+import com.app.common.ui.DialogHelper;
 import com.app.common.ui.LayoutAware;
 import com.app.common.ui.ViewLoader;
 import com.app.user.model.User;
@@ -11,14 +13,10 @@ import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
-import javafx.fxml.FXMLLoader;
 import javafx.scene.Node;
-import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
-import javafx.stage.Modality;
-import javafx.stage.Stage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -88,8 +86,8 @@ public class UserController implements LayoutAware {
 
         currentView = root;
 
-        cbRole.getItems().addAll("ALL", "ADMIN", "USER");
-        cbRole.setValue("ALL");
+        cbRole.getItems().addAll(I18n.get("common.all"), Role.ADMIN.toString(), Role.USER.toString());
+        cbRole.setValue(I18n.get("common.all"));
 
         colSTT.setCellValueFactory(c ->
                 new SimpleIntegerProperty(
@@ -125,7 +123,7 @@ public class UserController implements LayoutAware {
         });
 
         colRole.setCellValueFactory(c ->
-                new SimpleStringProperty(c.getValue().getRole().name())
+                new SimpleStringProperty(c.getValue().getRole().toString())
         );
 
         addActionColumn();
@@ -155,8 +153,8 @@ public class UserController implements LayoutAware {
         filteredUsers = allUsers.stream()
                 .filter(u -> {
                     boolean matchUsername = u.getUsername().toLowerCase().contains(keyword);
-                    boolean matchRole = role.equals("ALL") ||
-                            u.getRole().name().equalsIgnoreCase(role);
+                    boolean matchRole = role.equals(I18n.get("common.all")) ||
+                            u.getRole().toString().equals(role);
                     return matchUsername && matchRole;
                 })
                 .toList();
@@ -168,7 +166,7 @@ public class UserController implements LayoutAware {
     @FXML
     private void onReset() {
         txtSearch.clear();
-        cbRole.setValue("ALL");
+        cbRole.setValue(I18n.get("common.all"));
         filteredUsers = new ArrayList<>(allUsers);
         currentPageIndex = 0;
         setupPagination();
@@ -195,8 +193,8 @@ public class UserController implements LayoutAware {
     private void addActionColumn() {
         colAction.setCellFactory(param -> new TableCell<>() {
 
-            private final Button btnEdit = new Button("Sửa");
-            private final Button btnDelete = new Button("Xóa");
+            private final Button btnEdit = new Button(I18n.get("common.edit"));
+            private final Button btnDelete = new Button(I18n.get("common.delete"));
 
             {
                 btnEdit.setStyle("-fx-background-color:#2980b9; -fx-text-fill:white;");
@@ -209,11 +207,13 @@ public class UserController implements LayoutAware {
 
                 btnDelete.setOnAction(e -> {
                     User user = getTableView().getItems().get(getIndex());
-                    Alert confirm = new Alert(Alert.AlertType.CONFIRMATION,
-                            "Xóa user này?", ButtonType.YES, ButtonType.NO);
+                    Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
+                    confirm.setTitle(I18n.get("common.confirm"));
+                    confirm.setHeaderText(null);
+                    confirm.setContentText(I18n.get("user.delete.confirm"));
 
                     confirm.showAndWait().ifPresent(type -> {
-                        if (type == ButtonType.YES) {
+                        if (type == ButtonType.OK) {
                             userService.delete(user.getId());
                             log.info("Deleted user '{}'", user.getUsername());
                             loadData();
@@ -252,7 +252,7 @@ public class UserController implements LayoutAware {
     private void updatePagerControls(int pageCount) {
         btnPrev.setDisable(currentPageIndex <= 0);
         btnNext.setDisable(currentPageIndex >= pageCount - 1);
-        lblPageInfo.setText("Page " + (currentPageIndex + 1) + " / " + pageCount);
+        lblPageInfo.setText(I18n.get("common.page") + " " + (currentPageIndex + 1) + " / " + pageCount);
     }
 
     private int getPageCount() {
@@ -263,23 +263,16 @@ public class UserController implements LayoutAware {
 
     private void openForm(User user) {
         try {
-            FXMLLoader loader = new FXMLLoader(
-                    getClass().getResource("/fxml/user/user-form.fxml")
+            var dialog = DialogHelper.<UserFormController>openWithController(
+                    "/fxml/user/user-form.fxml",
+                    user == null ? I18n.get("user.add.title") : I18n.get("user.edit.title")
             );
-            loader.setControllerFactory(SpringContextHolder::getBean);
 
-            Scene scene = new Scene(loader.load(), 460, 360);
+            dialog.controller().setUser(user);
 
-            UserFormController controller = loader.getController();
-            controller.setUser(user);
-
-            Stage stage = new Stage();
-            stage.setTitle(user == null ? "Thêm User" : "Sửa User");
-            stage.setScene(scene);
-            stage.setMinWidth(460);
-            stage.setMinHeight(360);
-            stage.initModality(Modality.APPLICATION_MODAL);
-            stage.showAndWait();
+            dialog.stage().setMinWidth(460);
+            dialog.stage().setMinHeight(360);
+            dialog.stage().showAndWait();
 
             loadData();
 

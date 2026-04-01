@@ -1,10 +1,9 @@
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.*?>
+<?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
-<StackPane xmlns:fx="http://javafx.com/fxml"
-           fx:controller="com.app.auth.controller.LoginController"
-           stylesheets="@/css/login.css"
+<StackPane xmlns:fx="http://javafx.com/fxml" fx:controller="com.app.auth.controller.LoginController"
            styleClass="root">
 
     <VBox spacing="15" alignment="CENTER" styleClass="login-card">
@@ -12,22 +11,22 @@
             <Insets top="30" right="40" bottom="30" left="40"/>
         </padding>
 
-        <Label text="Sign in" styleClass="title"/>
+        <HBox spacing="10" alignment="CENTER_RIGHT">
+            <Button fx:id="btnEnglish" text="EN" onAction="#switchToEnglish"
+                    styleClass="lang-btn"/>
+            <Button fx:id="btnVietnamese" text="VN" onAction="#switchToVietnamese"
+                    styleClass="lang-btn"/>
+        </HBox>
 
-        <TextField fx:id="username"
-                   promptText="Username"
-                   styleClass="input"/>
+        <Label text="%login.title" styleClass="title"/>
 
-        <PasswordField fx:id="password"
-                       promptText="Password"
-                       styleClass="input"/>
+        <TextField fx:id="username" promptText="%login.username" styleClass="input"/>
 
+        <PasswordField fx:id="password" promptText="%login.password" styleClass="input"/>
 
         <Label fx:id="message" styleClass="message-error"/>
 
-        <Button text="Sign in"
-                onAction="#handleLogin"
-                styleClass="login-btn"/>
+        <Button text="%login.button" onAction="#handleLogin" styleClass="login-btn"/>
 
     </VBox>
 </StackPane>

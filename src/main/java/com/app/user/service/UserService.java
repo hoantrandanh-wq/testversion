@@ -3,12 +3,16 @@ package com.app.user.service;
 import com.app.common.util.SecurityUtil;
 import com.app.user.model.User;
 import com.app.user.repository.UserRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 
 @Service
 public class UserService {
+
+    private static final Logger log = LoggerFactory.getLogger(UserService.class);
 
     private final UserRepository userRepository;
 
@@ -17,7 +21,7 @@ public class UserService {
     }
 
     public User login(String username, String password) {
-        return userRepository.findUserByUserName(username)
+        return userRepository.findByUsername(username)
                 .filter(u -> SecurityUtil.verify(password, u.getPassword()))
                 .orElse(null);
     }
@@ -41,12 +45,16 @@ public class UserService {
             throw new RuntimeException("Role is required");
         }
 
+        user.setUsername(username);
         user.setPassword(SecurityUtil.hash(user.getPassword()));
-        return userRepository.save(user);
+
+        User saved = userRepository.save(user);
+        log.info("User created: '{}'", username);
+
+        return saved;
     }
 
     public void update(User user) {
-
         User old = userRepository.findById(user.getId())
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
@@ -66,10 +74,12 @@ public class UserService {
         }
 
         userRepository.save(old);
+        log.info("User updated: '{}'", username);
     }
 
     public void delete(Long id) {
         userRepository.deleteById(id);
+        log.info("User deleted: id={}", id);
     }
 
     private String normalizeUsername(String username) {

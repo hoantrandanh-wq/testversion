@@ -1,0 +1,31 @@
+.content {
+    -fx-background-color: -card-bg;
+    -fx-border-color: -border-color;
+}
+
+/* TABLE */
+.table-view {
+    -fx-background-color: -table-bg;
+    -fx-border-color: -border-color;
+}
+
+.table-row-cell {
+    -fx-background-color: -table-bg;
+}
+
+.table-row-cell:odd {
+    -fx-background-color: -table-odd;
+}
+
+.table-row-cell:hover {
+    -fx-background-color: -table-hover;
+}
+
+.table-row-cell:selected {
+    -fx-background-color: -table-selected;
+}
+
+/* TEXT */
+.label {
+    -fx-text-fill: -text-color;
+}
