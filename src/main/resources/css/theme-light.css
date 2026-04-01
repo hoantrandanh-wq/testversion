@@ -274,3 +274,22 @@
     -fx-background-radius: 6;
 }
 
+/* ===== CONTEXT MENU ===== */
+.context-menu {
+    -fx-background-color: -card-bg;
+    -fx-border-color: -border-color;
+}
+
+.context-menu .menu-item {
+    -fx-text-fill: -text-color;
+    -fx-background-color: -card-bg;
+}
+
+.context-menu .menu-item:hover {
+    -fx-background-color: -table-hover;
+}
+
+.context-menu .menu-item:focused {
+    -fx-background-color: -table-hover;
+}
+

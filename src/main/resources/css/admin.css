@@ -31,4 +31,5 @@
 
 .context-menu .menu-item {
     -fx-pref-width: 140;
+    -fx-text-fill: -text-color;
 }
