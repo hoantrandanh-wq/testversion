@@ -73,22 +73,29 @@ jobs:
             --java-options "-DLOGGLY_TOKEN=$env:LOGGLY_TOKEN" `
             --jlink-options "--strip-debug --compress=2 --no-header-files --no-man-pages --bind-services"
 
+      # ✅ Cài NSIS 3.x
       - name: Install NSIS
-        run: choco install nsis -y
+        run: choco install nsis --version=3.10 -y
+
+      # ✅ Check version (debug)
+      - name: Check NSIS version
+        run: makensis -VERSION
 
       - name: Build NSIS installer
         run: |
-          $version = "${{ env.APP_VERSION }}"
+          $version = "${{ github.ref_name }}".TrimStart("v")
 
-          # Chuẩn bị script với đúng đường dẫn và version
-          (Get-Content src\main\resources\installer\installer.nsi) `
+          New-Item -ItemType Directory -Force -Path build\installer
+
+          # Đọc file gốc và replace
+          (Get-Content src\main\resources\installer\installer.nsi -Raw) `
             -replace 'OutFile "BDMA-Setup.exe"', "OutFile `"$((Get-Location).Path)\build\installer\BDMA-$version-Setup.exe`"" `
             -replace 'File /r "dist\\BDMA\\*.*"', "File /r `"$((Get-Location).Path)\build\dist\BDMA\*.*`"" `
             -replace '\$%APP_VERSION%', $version |
-            Set-Content build\installer.nsi
+            Set-Content build\installer.nsi -Encoding UTF8
 
-          New-Item -ItemType Directory -Force -Path build\installer
-          & "C:\Program Files (x86)\NSIS\makensis.exe" build\installer.nsi
+          # ✅ Dùng đúng makensis trong PATH (KHÔNG hardcode)
+          makensis build\installer.nsi
 
       - name: Upload Release Asset
         uses: softprops/action-gh-release@v2
