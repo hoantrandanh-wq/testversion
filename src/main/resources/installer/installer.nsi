@@ -114,8 +114,8 @@ Section "Main" SecMain
   ${EndIf}
 
   ${If} $UserChoice == "3"
-    Call DoUninstall
     Call DeleteData
+    Call DoUninstall
     Quit
   ${EndIf}
 
@@ -181,4 +181,6 @@ FunctionEnd
 ; ── Xóa data ────────────────────────────────────────────────────
 Function DeleteData
   RMDir /r "${APP_DATA_DIR}"
+  ExecWait '$SYSDIR\cmd.exe /C attrib -R -H -S "$\"${APP_DATA_DIR}$\"" /S /D'
+  ExecWait '$SYSDIR\cmd.exe /C rmdir /S /Q "$\"${APP_DATA_DIR}$\""'
 FunctionEnd
