@@ -2,6 +2,7 @@
 !include "LogicLib.nsh"
 !include "nsDialogs.nsh"
 !include "FileFunc.nsh"
+!include "WinMessages.nsh"
 
 !ifndef APP_VERSION
 !define APP_VERSION "dev"
@@ -70,6 +71,8 @@ Function ShowActionDialog
   ${EndIf}
 
   !insertmacro MUI_HEADER_TEXT "BDMA đã được cài đặt" "Vui lòng chọn hành động"
+  GetDlgItem $0 $HWNDPARENT 1
+  SendMessage $0 ${WM_SETTEXT} 0 "STR:Tiếp tục"
 
   nsDialogs::Create 1018
   Pop $Dialog
@@ -91,23 +94,47 @@ FunctionEnd
 
 Function ShowActionDialogLeave
   ${NSD_GetState} $RadioInstall $0
+  GetDlgItem $1 $HWNDPARENT 1
+
   ${If} $0 == ${BST_CHECKED}
     StrCpy $UserChoice "1"
+    SendMessage $1 ${WM_SETTEXT} 0 "STR:Cài đặt"
     Goto done
   ${EndIf}
 
   ${NSD_GetState} $RadioUninstall $0
   ${If} $0 == ${BST_CHECKED}
     StrCpy $UserChoice "2"
+    SendMessage $1 ${WM_SETTEXT} 0 "STR:Gỡ cài đặt"
     Goto done
   ${EndIf}
 
   StrCpy $UserChoice "3"
+  SendMessage $1 ${WM_SETTEXT} 0 "STR:Gỡ cài đặt"
   done:
+FunctionEnd
+
+Function EnsureAppClosed
+  ClearErrors
+  nsExec::ExecToStack 'powershell -NoProfile -ExecutionPolicy Bypass -Command "if (Get-Process -Name ''BDMA'' -ErrorAction SilentlyContinue) { Write-Output ''RUNNING'' }"'
+  Pop $0
+  Pop $1
+
+  ${If} $0 == 0
+  ${AndIf} $1 != ""
+    MessageBox MB_ICONEXCLAMATION|MB_OK "BDMA đang chạy. Vui lòng tắt ứng dụng trước khi tiếp tục."
+    SetErrors
+  ${EndIf}
 FunctionEnd
 
 ; ── Section chính ───────────────────────────────────────────────
 Section "Main" SecMain
+  ${If} $IsInstalled == "1"
+    Call EnsureAppClosed
+    IfErrors 0 +2
+    Quit
+  ${EndIf}
+
   ${If} $UserChoice == "2"
     Call DoUninstall
     Quit
