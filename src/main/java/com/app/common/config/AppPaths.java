@@ -32,4 +32,8 @@ public final class AppPaths {
     public static File logConfigFile() {
         return new File(configDir() + "/logback.xml");
     }
+
+    public static String dataDir() {
+        return System.getProperty("user.home") + "/BDMA";
+    }
 }
