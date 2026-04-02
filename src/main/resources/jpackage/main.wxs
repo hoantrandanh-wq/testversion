@@ -68,19 +68,10 @@
     <Binary Id="JpCaDll" SourceFile="wixhelper.dll"/>
     <CustomAction Id="JpFindRelatedProducts" BinaryKey="JpCaDll" DllEntry="FindRelatedProductsEx" />
 
-    <!-- Lấy đường dẫn cài đặt từ registry -->
-    <Property Id="INSTALLDIR_FROM_REG">
-      <RegistrySearch Id="FindInstallDir"
-        Root="HKLM"
-        Key="Software\Microsoft\Windows\CurrentVersion\Uninstall\$(var.JpAppName)"
-        Name="InstallLocation"
-        Type="raw" />
-    </Property>
-
-    <!-- Gọi UninstallHelper.exe trước khi xóa file -->
+    <!-- Gọi UninstallHelper.jar bằng JRE bundled của app chính -->
     <CustomAction Id="RunUninstallHelper"
       Directory="INSTALLDIR"
-      ExeCommand="[INSTALLDIR]UninstallHelper\UninstallHelper.exe"
+      ExeCommand='"[INSTALLDIR]runtime\bin\java.exe" -jar "[INSTALLDIR]app\UninstallHelper.jar"'
       Execute="immediate"
       Return="ignore"
       Impersonate="yes" />
