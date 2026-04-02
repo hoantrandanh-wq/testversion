@@ -116,12 +116,11 @@ FunctionEnd
 
 Function EnsureAppClosed
   ClearErrors
-  nsExec::ExecToStack 'powershell -NoProfile -ExecutionPolicy Bypass -Command "$client = New-Object Net.Sockets.TcpClient; try { $client.Connect(''127.0.0.1'', 54321); if ($client.Connected) { Write-Output ''RUNNING'' } } catch {} finally { if ($client.Connected) { $client.Close() } }"'
+  nsExec::ExecToStack 'powershell -NoProfile -ExecutionPolicy Bypass -Command "$isRunning = $false; $exePath = [IO.Path]::GetFullPath(''$INSTDIR\BDMA.exe''); try { $client = New-Object Net.Sockets.TcpClient; try { $client.Connect(''127.0.0.1'', 54321); if ($client.Connected) { $isRunning = $true } } catch {} finally { if ($client -and $client.Connected) { $client.Close() } } if (-not $isRunning) { $process = Get-CimInstance Win32_Process -Filter \"Name = ''BDMA.exe''\" -ErrorAction SilentlyContinue | Where-Object { $_.ExecutablePath -and ([IO.Path]::GetFullPath($_.ExecutablePath) -ieq $exePath) } | Select-Object -First 1; if ($process) { $isRunning = $true } } if ($isRunning) { exit 1 } exit 0"'
   Pop $0
   Pop $1
 
-  ${If} $0 == 0
-  ${AndIf} $1 != ""
+  ${If} $0 != 0
     MessageBox MB_ICONEXCLAMATION|MB_OK "BDMA đang chạy. Vui lòng tắt ứng dụng trước khi tiếp tục."
     SetErrors
   ${EndIf}
@@ -191,8 +190,6 @@ Function DoUninstall
   RMDir /r "$INSTDIR\app"
   RMDir /r "$INSTDIR\runtime"
   Delete "$INSTDIR\BDMA.exe"
-  Delete "$INSTDIR\BDMA-Setup.exe"
-  RMDir "$INSTDIR"
 
   Delete "$DESKTOP\BDMA.lnk"
   Delete "$SMPROGRAMS\BDMA\BDMA.lnk"
@@ -201,6 +198,18 @@ Function DoUninstall
 
   DeleteRegKey HKLM "Software\BDMA"
   DeleteRegKey HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\BDMA"
+
+  StrCpy $0 "$TEMP\bdma-cleanup.cmd"
+  FileOpen $1 $0 w
+  FileWrite $1 "@echo off$\r$\n"
+  FileWrite $1 ":retry$\r$\n"
+  FileWrite $1 "ping 127.0.0.1 -n 3 > nul$\r$\n"
+  FileWrite $1 "del /F /Q $\"$EXEPATH$\"$\r$\n"
+  FileWrite $1 "if exist $\"$EXEPATH$\" goto retry$\r$\n"
+  FileWrite $1 "rmdir /S /Q $\"$INSTDIR$\"$\r$\n"
+  FileWrite $1 "del /F /Q %~f0$\r$\n"
+  FileClose $1
+  Exec '"$SYSDIR\cmd.exe" /C start "" /min "$0"'
 
   MessageBox MB_OK "Gỡ cài đặt BDMA thành công!"
 FunctionEnd
