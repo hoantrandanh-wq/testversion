@@ -1,9 +1,22 @@
 !include "MUI2.nsh"
 !include "LogicLib.nsh"
 !include "nsDialogs.nsh"
+!include "FileFunc.nsh"
+
+!ifndef APP_VERSION
+!define APP_VERSION "dev"
+!endif
+
+!ifndef INSTALLER_SOURCE_DIR
+!define INSTALLER_SOURCE_DIR "dist\\BDMA"
+!endif
+
+!ifndef INSTALLER_OUTPUT_DIR
+!define INSTALLER_OUTPUT_DIR "."
+!endif
 
 Name "BDMA"
-OutFile "BDMA-Setup.exe"
+OutFile "${INSTALLER_OUTPUT_DIR}\\BDMA-${APP_VERSION}-Setup.exe"
 InstallDir "$PROGRAMFILES64\BDMA"
 InstallDirRegKey HKLM "Software\BDMA" "InstallDir"
 RequestExecutionLevel admin
@@ -92,7 +105,7 @@ Section "Main" SecMain
 
   ; ── Install / Update ────────────────────────────────────────
   SetOutPath "$INSTDIR"
-  File /r "dist\BDMA\*.*"
+  File /r "${INSTALLER_SOURCE_DIR}\*.*"
 
   ; Copy file setup vào thư mục cài đặt để làm uninstaller
   CopyFiles "$EXEPATH" "$INSTDIR\BDMA-Setup.exe"
@@ -110,7 +123,16 @@ Section "Main" SecMain
   WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\BDMA" \
     "Publisher" "DVID"
   WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\BDMA" \
-    "DisplayVersion" "$%APP_VERSION%"
+    "DisplayVersion" "${APP_VERSION}"
+  WriteRegDWORD HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\BDMA" \
+    "NoModify" 1
+  WriteRegDWORD HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\BDMA" \
+    "NoRepair" 1
+
+  ${GetSize} "$INSTDIR" "/S=0K" $0 $1 $2
+  IntFmt $0 "0x%08X" $0
+  WriteRegDWORD HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\BDMA" \
+    "EstimatedSize" $0
 
   ; Shortcut
   CreateShortcut "$DESKTOP\BDMA.lnk" "$INSTDIR\BDMA.exe"

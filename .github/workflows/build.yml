@@ -78,30 +78,24 @@ jobs:
 
       - name: Build NSIS installer
         run: |
-          $version = "${{ env.APP_VERSION }}"
+          $version = "${{ github.ref_name }}".TrimStart("v")
+          $outputDir = Join-Path (Get-Location).Path "build\installer"
+          $sourceDir = Join-Path (Get-Location).Path "build\dist\BDMA"
 
           New-Item -ItemType Directory -Force -Path build\installer | Out-Null
 
-          # Chuẩn bị script với đúng đường dẫn và version
-          $installerScript = Get-Content src\main\resources\installer\installer.nsi -Raw
-          $installerScript = $installerScript `
-            -replace 'OutFile "BDMA-Setup.exe"', "OutFile `"$((Get-Location).Path)\build\installer\BDMA-$version-Setup.exe`"" `
-            -replace 'File /r "dist\\BDMA\\*.*"', "File /r `"$((Get-Location).Path)\build\dist\BDMA\*.*`"" `
-            -replace '\$%APP_VERSION%', $version
-
-          [System.IO.File]::WriteAllText(
-            "build\installer.nsi",
-            $installerScript,
-            [System.Text.UTF8Encoding]::new($true)
-          )
-
-          & "C:\Program Files (x86)\NSIS\makensis.exe" /INPUTCHARSET UTF8 build\installer.nsi
+          & "C:\Program Files (x86)\NSIS\makensis.exe" `
+            /INPUTCHARSET UTF8 `
+            "/DAPP_VERSION=$version" `
+            "/DINSTALLER_OUTPUT_DIR=$outputDir" `
+            "/DINSTALLER_SOURCE_DIR=$sourceDir" `
+            src\main\resources\installer\installer.nsi
 
       - name: Upload Release Asset
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v${{ env.APP_VERSION }}
-          name: Release v${{ env.APP_VERSION }}
+          tag_name: ${{ github.ref_name }}
+          name: Release ${{ github.ref_name }}
           files: build/installer/*.exe
           make_latest: true
           generate_release_notes: true
