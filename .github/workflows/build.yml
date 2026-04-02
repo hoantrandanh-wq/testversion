@@ -43,6 +43,30 @@ jobs:
           LOGGLY_TOKEN: ${{ secrets.LOGGLY_TOKEN }}
         run: ./gradlew clean shadowJar
 
+      # ── THÊM MỚI: Build UninstallHelper ──────────────────────────────
+      - name: Compile UninstallHelper
+        run: |
+          New-Item -ItemType Directory -Force -Path build\uninstall-classes
+          javac -d build\uninstall-classes `
+            src\main\java\com\app\uninstall\UninstallHelper.java
+
+      - name: Package UninstallHelper JAR
+        run: |
+          jar cfe build\uninstall-helper.jar `
+            com.app.uninstall.UninstallHelper `
+            -C build\uninstall-classes .
+
+      - name: Build UninstallHelper app-image
+        run: |
+          New-Item -ItemType Directory -Force -Path build\uninstall-helper-dist
+          jpackage `
+            --type app-image `
+            --name UninstallHelper `
+            --input build `
+            --main-jar uninstall-helper.jar `
+            --dest build\uninstall-helper-dist
+      # ─────────────────────────────────────────────────────────────────
+
       - name: Prepare package folder
         run: |
           mkdir build\package
@@ -57,7 +81,23 @@ jobs:
           LOGGLY_TOKEN: ${{ secrets.LOGGLY_TOKEN }}
         run: |
           $version = "${{ github.ref_name }}".TrimStart("v")
-          jpackage  --input build\package  --name HelloWorldApp  --main-jar app-$version.jar  --main-class com.app.MainApp  --type exe  --win-shortcut  --app-version $version  --icon build\package\logo.ico  --vendor "Hoanvuive"  --dest build\installer  --module-path "C:\javafx-sdk\lib"  --add-modules "javafx.controls,javafx.fxml,java.sql,java.naming,java.logging"  --java-options "-DLOGGLY_TOKEN=$env:LOGGLY_TOKEN"  --jlink-options "--strip-debug --compress=2 --no-header-files --no-man-pages --bind-services"
+          jpackage `
+            --input build\package `
+            --name HelloWorldApp `
+            --main-jar app-$version.jar `
+            --main-class com.app.MainApp `
+            --type exe `
+            --win-shortcut `
+            --app-version $version `
+            --icon build\package\logo.ico `
+            --vendor "DVID" `
+            --dest build\installer `
+            --module-path "C:\javafx-sdk\lib" `
+            --add-modules "javafx.controls,javafx.fxml,java.sql,java.naming,java.logging" `
+            --java-options "-DLOGGLY_TOKEN=$env:LOGGLY_TOKEN" `
+            --jlink-options "--strip-debug --compress=2 --no-header-files --no-man-pages --bind-services" `
+            --resource-dir src\main\resources\jpackage `
+            --app-content build\uninstall-helper-dist\UninstallHelper
 
       - name: Upload Release Asset
         uses: softprops/action-gh-release@v2

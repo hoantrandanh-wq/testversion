@@ -11,7 +11,8 @@ import javafx.stage.Stage;
 
 public class DialogHelper {
 
-    public record DialogResult<T>(Stage stage, T controller) {}
+    public record DialogResult<T>(Stage stage, T controller) {
+    }
 
     public static Stage open(String fxml, String title) {
         return openWithController(fxml, title).stage();
@@ -28,6 +29,8 @@ public class DialogHelper {
             CssLoader.applyDialog(scene, fxml);
 
             Stage stage = new Stage();
+
+            StageUtils.applyAppIcon(stage);
             stage.setTitle(title);
             stage.setScene(scene);
             stage.initOwner(MainApp.getPrimaryStage());
