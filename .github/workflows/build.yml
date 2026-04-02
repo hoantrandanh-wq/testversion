@@ -27,11 +27,11 @@ jobs:
         with:
           gradle-version: '8.7'
 
-      - name: Download JavaFX SDK
+      - name: Download JavaFX JMODs
         run: |
-          curl -L "https://download2.gluonhq.com/openjfx/21.0.2/openjfx-21.0.2_windows-x64_bin-sdk.zip" -o javafx.zip
-          Expand-Archive -Path javafx.zip -DestinationPath C:\
-          Rename-Item "C:\javafx-sdk-21.0.2" "C:\javafx-sdk"
+          curl -L "https://download2.gluonhq.com/openjfx/21.0.2/openjfx-21.0.2_windows-x64_bin-jmods.zip" -o javafx-jmods.zip
+          Expand-Archive -Path javafx-jmods.zip -DestinationPath C:\
+          Rename-Item "C:\javafx-jmods-21.0.2" "C:\javafx-jmods"
 
       - name: Grant Gradle permission
         run: chmod +x gradlew
@@ -58,6 +58,8 @@ jobs:
           LOGGLY_TOKEN: ${{ secrets.LOGGLY_TOKEN }}
         run: |
           $version = "${{ github.ref_name }}".TrimStart("v")
+          $modulePath = "$env:JAVA_HOME\jmods;C:\javafx-jmods"
+
           jpackage `
             --type app-image `
             --name BDMA `
@@ -67,8 +69,8 @@ jobs:
             --app-version $version `
             --icon build\package\logo.ico `
             --dest build\dist `
-            --module-path "C:\javafx-sdk\lib" `
-            --add-modules "javafx.controls,javafx.fxml,java.sql,java.naming,java.logging" `
+            --module-path $modulePath `
+            --add-modules "javafx.base,javafx.graphics,javafx.controls,javafx.fxml,java.sql,java.logging" `
             --java-options "-DLOGGLY_TOKEN=$env:LOGGLY_TOKEN" `
             --jlink-options "--strip-debug --compress=2 --no-header-files --no-man-pages --bind-services"
 
