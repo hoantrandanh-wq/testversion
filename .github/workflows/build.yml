@@ -83,6 +83,14 @@ jobs:
           $outputDir = Join-Path (Get-Location).Path "build\installer"
           $sourceDir = Join-Path (Get-Location).Path "build\dist\BDMA"
           $iconPath = Join-Path (Get-Location).Path "src\main\resources\image\logo.ico"
+          $appPathsSource = Get-Content "src\main\java\com\app\common\config\AppPaths.java" -Raw
+          $appDirMatch = [regex]::Match($appPathsSource, 'APP_DIR\s*=\s*System\.getProperty\("user\.home"\)\s*\+\s*"(?<suffix>[^"]+)"')
+
+          if (-not $appDirMatch.Success) {
+            throw "Could not extract APP_DIR from AppPaths.java"
+          }
+
+          $appDataDir = '$PROFILE' + ($appDirMatch.Groups['suffix'].Value -replace '/', '\\')
 
           New-Item -ItemType Directory -Force -Path build\installer | Out-Null
 
@@ -92,6 +100,7 @@ jobs:
             "/DINSTALLER_OUTPUT_DIR=$outputDir" `
             "/DINSTALLER_SOURCE_DIR=$sourceDir" `
             "/DINSTALLER_ICON=$iconPath" `
+            "/DAPP_DATA_DIR=$appDataDir" `
             src\main\resources\installer\installer.nsi
 
       - name: Upload Release Asset

@@ -19,6 +19,10 @@
 !define INSTALLER_ICON "..\\image\\logo.ico"
 !endif
 
+!ifndef APP_DATA_DIR
+!define APP_DATA_DIR "$PROFILE\\.helloworld-app"
+!endif
+
 !define MUI_ICON "${INSTALLER_ICON}"
 !define MUI_UNICON "${INSTALLER_ICON}"
 
@@ -176,5 +180,5 @@ FunctionEnd
 
 ; ── Xóa data ────────────────────────────────────────────────────
 Function DeleteData
-  RMDir /r "$LOCALAPPDATA\bdma"
+  RMDir /r "${APP_DATA_DIR}"
 FunctionEnd

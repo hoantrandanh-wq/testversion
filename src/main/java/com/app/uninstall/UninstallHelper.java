@@ -1,5 +1,7 @@
 package com.app.uninstall;
 
+import com.app.common.config.AppPaths;
+
 import javax.swing.*;
 import java.awt.*;
 import java.io.File;
@@ -11,9 +13,7 @@ import java.util.Comparator;
 public class UninstallHelper {
 
     private static final int SINGLE_INSTANCE_PORT = 54321;
-    private static final File DATA_DIR = new File(
-            System.getProperty("user.home") + "/AppData/Local/bdma"
-    );
+    private static final File APP_DIR = new File(AppPaths.appDir());
 
     public static void main(String[] args) {
         try {
@@ -33,7 +33,7 @@ public class UninstallHelper {
         }
 
         // Không có data thì bỏ qua dialog
-        if (!DATA_DIR.exists()) {
+        if (!APP_DIR.exists()) {
             System.exit(0);
         }
 
@@ -44,7 +44,7 @@ public class UninstallHelper {
                 "<html>" +
                         "Bạn có muốn xóa toàn bộ dữ liệu của BDMA không?<br/>" +
                         "<small style='color:gray'>Bao gồm cài đặt, lịch sử và các file đã lưu tại:<br/>" +
-                        DATA_DIR.getAbsolutePath() + "</small>" +
+                        APP_DIR.getAbsolutePath() + "</small>" +
                         "</html>"
         ), BorderLayout.CENTER);
 
@@ -57,7 +57,7 @@ public class UninstallHelper {
         );
 
         if (result == JOptionPane.YES_OPTION) {
-            deleteDirectory(DATA_DIR);
+            deleteDirectory(APP_DIR);
         }
 
         System.exit(0);
@@ -74,6 +74,10 @@ public class UninstallHelper {
 
     private static void deleteDirectory(File dir) {
         try {
+            if (!dir.exists()) {
+                return;
+            }
+
             Files.walk(dir.toPath())
                     .sorted(Comparator.reverseOrder())
                     .map(Path::toFile)
