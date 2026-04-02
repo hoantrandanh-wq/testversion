@@ -15,8 +15,13 @@
 !define INSTALLER_OUTPUT_DIR "."
 !endif
 
+!ifndef INSTALLER_ICON
+!define INSTALLER_ICON "..\\image\\logo.ico"
+!endif
+
 Name "BDMA"
 OutFile "${INSTALLER_OUTPUT_DIR}\\BDMA-${APP_VERSION}-Setup.exe"
+Icon "${INSTALLER_ICON}"
 InstallDir "$PROGRAMFILES64\BDMA"
 InstallDirRegKey HKLM "Software\BDMA" "InstallDir"
 RequestExecutionLevel admin

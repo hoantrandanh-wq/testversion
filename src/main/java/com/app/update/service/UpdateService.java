@@ -148,6 +148,24 @@ public class UpdateService {
         return dest.toFile();
     }
 
+    public void launchInstaller(File installer) throws Exception {
+        String installerPath = installer.getAbsolutePath();
+
+        if (isWindows()) {
+            String escapedPath = installerPath.replace("'", "''");
+            new ProcessBuilder(
+                    "powershell",
+                    "-NoProfile",
+                    "-ExecutionPolicy", "Bypass",
+                    "-Command",
+                    "Start-Process -FilePath '" + escapedPath + "' -Verb RunAs"
+            ).start();
+            return;
+        }
+
+        new ProcessBuilder(installerPath).start();
+    }
+
     // ── Private ──────────────────────────────────────────────────────────────
 
     private JSONObject loadPrefs() {
@@ -180,5 +198,9 @@ public class UpdateService {
         WeekFields wf = WeekFields.ISO;
         return d1.get(wf.weekOfWeekBasedYear()) == d2.get(wf.weekOfWeekBasedYear())
                 && d1.getYear() == d2.getYear();
+    }
+
+    private boolean isWindows() {
+        return System.getProperty("os.name", "").toLowerCase().contains("win");
     }
 }

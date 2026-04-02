@@ -81,6 +81,7 @@ jobs:
           $version = "${{ github.ref_name }}".TrimStart("v")
           $outputDir = Join-Path (Get-Location).Path "build\installer"
           $sourceDir = Join-Path (Get-Location).Path "build\dist\BDMA"
+          $iconPath = Join-Path (Get-Location).Path "src\main\resources\image\logo.ico"
 
           New-Item -ItemType Directory -Force -Path build\installer | Out-Null
 
@@ -89,6 +90,7 @@ jobs:
             "/DAPP_VERSION=$version" `
             "/DINSTALLER_OUTPUT_DIR=$outputDir" `
             "/DINSTALLER_SOURCE_DIR=$sourceDir" `
+            "/DINSTALLER_ICON=$iconPath" `
             src\main\resources\installer\installer.nsi
 
       - name: Upload Release Asset

@@ -142,8 +142,9 @@ public class UpdateController {
                 alert.setContentText(I18n.get("update.install.content"));
                 alert.showAndWait();
 
-                new ProcessBuilder(installer.getAbsolutePath()).start();
+                updateService.launchInstaller(installer);
                 Platform.exit();
+                System.exit(0);
 
             } catch (Exception ex) {
                 log.error("Failed to launch installer", ex);
