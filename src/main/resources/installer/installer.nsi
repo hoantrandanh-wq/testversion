@@ -31,6 +31,9 @@ InstallDirRegKey HKLM "Software\BDMA" "InstallDir"
 RequestExecutionLevel admin
 Unicode True
 
+SetCompressor /SOLID lzma
+SetCompressorDictSize 64
+
 !define MUI_ABORTWARNING
 
 Var Dialog

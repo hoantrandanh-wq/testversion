@@ -48,7 +48,6 @@ jobs:
           mkdir build\package
           copy build\libs\app-*.jar build\package\
           copy src\main\resources\image\logo.ico build\package\
-          xcopy "C:\javafx-sdk\bin" "build\package\" /E /H /Y
 
       - name: Convert icon
         run: |
