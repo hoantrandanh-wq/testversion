@@ -116,7 +116,7 @@ FunctionEnd
 
 Function EnsureAppClosed
   ClearErrors
-  nsExec::ExecToStack 'powershell -NoProfile -ExecutionPolicy Bypass -Command "if (Get-Process -Name ''BDMA'' -ErrorAction SilentlyContinue) { Write-Output ''RUNNING'' }"'
+  nsExec::ExecToStack 'powershell -NoProfile -ExecutionPolicy Bypass -Command "$client = New-Object Net.Sockets.TcpClient; try { $client.Connect(''127.0.0.1'', 54321); if ($client.Connected) { Write-Output ''RUNNING'' } } catch {} finally { if ($client.Connected) { $client.Close() } }"'
   Pop $0
   Pop $1
 
