@@ -19,9 +19,13 @@
 !define INSTALLER_ICON "..\\image\\logo.ico"
 !endif
 
+!define MUI_ICON "${INSTALLER_ICON}"
+!define MUI_UNICON "${INSTALLER_ICON}"
+
 Name "BDMA"
 OutFile "${INSTALLER_OUTPUT_DIR}\\BDMA-${APP_VERSION}-Setup.exe"
 Icon "${INSTALLER_ICON}"
+UninstallIcon "${INSTALLER_ICON}"
 InstallDir "$PROGRAMFILES64\BDMA"
 InstallDirRegKey HKLM "Software\BDMA" "InstallDir"
 RequestExecutionLevel admin
