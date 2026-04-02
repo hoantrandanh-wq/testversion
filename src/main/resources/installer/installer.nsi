@@ -123,8 +123,22 @@ Function ShowActionDialogLeave
   done:
 FunctionEnd
 
+; ── Đảm bảo app đã đóng trước khi gỡ ───────────────────────────
 Function EnsureAppClosed
-  Return
+  nsExec::ExecToStack '$SYSDIR\cmd.exe /C tasklist /FI "IMAGENAME eq BDMA.exe" /NH | find /I "BDMA.exe"'
+  Pop $0 ; exit code
+  Pop $1 ; output
+
+  ${If} $0 == 0
+    MessageBox MB_OKCANCEL|MB_ICONEXCLAMATION \
+      "BDMA đang chạy. Nhấn OK để đóng ứng dụng và tiếp tục gỡ cài đặt." \
+      IDOK kill IDCANCEL cancel
+    cancel:
+      Abort
+    kill:
+      ExecWait '$SYSDIR\taskkill.exe /F /IM BDMA.exe'
+      Sleep 1500
+  ${EndIf}
 FunctionEnd
 
 ; ── Section chính ───────────────────────────────────────────────
@@ -144,10 +158,8 @@ Section "Main" SecMain
   SetOutPath "$INSTDIR"
   File /r "${INSTALLER_SOURCE_DIR}\*.*"
 
-  ; Copy file setup vào thư mục cài đặt để làm uninstaller
   CopyFiles "$EXEPATH" "$INSTDIR\BDMA-Setup.exe"
 
-  ; Ghi registry
   WriteRegStr HKLM "Software\BDMA" "InstallDir" "$INSTDIR"
   WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\BDMA" \
     "DisplayName" "BDMA"
@@ -171,7 +183,6 @@ Section "Main" SecMain
   WriteRegDWORD HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\BDMA" \
     "EstimatedSize" $0
 
-  ; Shortcut
   CreateShortcut "$DESKTOP\BDMA.lnk" "$INSTDIR\BDMA.exe"
   CreateDirectory "$SMPROGRAMS\BDMA"
   CreateShortcut "$SMPROGRAMS\BDMA\BDMA.lnk" "$INSTDIR\BDMA.exe"
@@ -182,6 +193,8 @@ SectionEnd
 
 ; ── Uninstall ───────────────────────────────────────────────────
 Function DoUninstall
+  Call EnsureAppClosed
+
   RMDir /r "$INSTDIR\app"
   RMDir /r "$INSTDIR\runtime"
   Delete "$INSTDIR\BDMA.exe"
