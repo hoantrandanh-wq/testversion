@@ -47,12 +47,8 @@ jobs:
         run: |
           mkdir build\package
           copy build\libs\app-*.jar build\package\
+          copy src\main\resources\image\logo.ico build\package\
           xcopy "C:\javafx-sdk\bin" "build\package\" /E /H /Y
-
-      - name: Convert icon
-        run: |
-          magick src\main\resources\image\icon.webp -resize 256x256 build\package\icon.ico
-
       - name: Install WiX Toolset
         run: choco install wixtoolset -y
 
@@ -61,7 +57,7 @@ jobs:
           LOGGLY_TOKEN: ${{ secrets.LOGGLY_TOKEN }}
         run: |
           $version = "${{ github.ref_name }}".TrimStart("v")
-          jpackage  --input build\package  --name HelloWorldApp  --main-jar app-$version.jar  --main-class com.app.MainApp  --type exe  --win-shortcut  --app-version $version  --icon build\package\icon.ico  --vendor "Hoanvuive"  --dest build\installer  --module-path "C:\javafx-sdk\lib"  --add-modules "javafx.controls,javafx.fxml,java.sql,java.naming,java.logging"  --java-options "-DLOGGLY_TOKEN=$env:LOGGLY_TOKEN"  --jlink-options "--strip-debug --compress=2 --no-header-files --no-man-pages --bind-services"
+          jpackage  --input build\package  --name HelloWorldApp  --main-jar app-$version.jar  --main-class com.app.MainApp  --type exe  --win-shortcut  --app-version $version  --icon build\package\logo.ico  --vendor "Hoanvuive"  --dest build\installer  --module-path "C:\javafx-sdk\lib"  --add-modules "javafx.controls,javafx.fxml,java.sql,java.naming,java.logging"  --java-options "-DLOGGLY_TOKEN=$env:LOGGLY_TOKEN"  --jlink-options "--strip-debug --compress=2 --no-header-files --no-man-pages --bind-services"
 
       - name: Upload Release Asset
         uses: softprops/action-gh-release@v2
