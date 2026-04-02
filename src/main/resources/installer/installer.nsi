@@ -124,23 +124,11 @@ Function ShowActionDialogLeave
 FunctionEnd
 
 Function EnsureAppClosed
-  ClearErrors
-  ExecWait '"$SYSDIR\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -ExecutionPolicy Bypass -Command "try { $client = New-Object Net.Sockets.TcpClient; $async = $client.BeginConnect(''127.0.0.1'', 54321, $null, $null); if ($async.AsyncWaitHandle.WaitOne(300)) { $client.EndConnect($async); if ($client.Connected) { $client.Close(); exit 1 } } } catch {} exit 0"' $0
-
-  ${If} $0 == 1
-    MessageBox MB_ICONEXCLAMATION|MB_OK "BDMA đang chạy. Vui lòng tắt ứng dụng trước khi tiếp tục."
-    SetErrors
-  ${EndIf}
+  Return
 FunctionEnd
 
 ; ── Section chính ───────────────────────────────────────────────
 Section "Main" SecMain
-  ${If} $IsInstalled == "1"
-    Call EnsureAppClosed
-    IfErrors 0 +2
-    Quit
-  ${EndIf}
-
   ${If} $UserChoice == "2"
     Call DoUninstall
     Quit
