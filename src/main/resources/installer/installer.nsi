@@ -116,7 +116,7 @@ FunctionEnd
 
 Function EnsureAppClosed
   ClearErrors
-  nsExec::ExecToStack 'powershell -NoProfile -ExecutionPolicy Bypass -Command "$isRunning = $false; $exePath = [IO.Path]::GetFullPath(''$INSTDIR\BDMA.exe''); try { $client = New-Object Net.Sockets.TcpClient; try { $client.Connect(''127.0.0.1'', 54321); if ($client.Connected) { $isRunning = $true } } catch {} finally { if ($client -and $client.Connected) { $client.Close() } } if (-not $isRunning) { $process = Get-CimInstance Win32_Process -Filter \"Name = ''BDMA.exe''\" -ErrorAction SilentlyContinue | Where-Object { $_.ExecutablePath -and ([IO.Path]::GetFullPath($_.ExecutablePath) -ieq $exePath) } | Select-Object -First 1; if ($process) { $isRunning = $true } } if ($isRunning) { exit 1 } exit 0"'
+  nsExec::ExecToStack 'powershell -NoProfile -ExecutionPolicy Bypass -Command "try { $client = New-Object Net.Sockets.TcpClient(''127.0.0.1'', 54321); if ($client.Connected) { $client.Close(); exit 1 } } catch {} exit 0"'
   Pop $0
   Pop $1
 
