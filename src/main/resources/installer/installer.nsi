@@ -56,12 +56,21 @@ Page custom ShowActionDialog ShowActionDialogLeave
 ; ── Detect đã cài chưa ──────────────────────────────────────────
 Function .onInit
   ReadRegStr $IsInstalled HKLM "Software\BDMA" "InstallDir"
-  ${If} $IsInstalled != ""
+  ${If} $IsInstalled == ""
+    Goto notInstalled
+  ${EndIf}
+
+  IfFileExists "$IsInstalled\BDMA.exe" installed notInstalled
+
+  installed:
     StrCpy $IsInstalled "1"
-  ${Else}
+    Return
+
+  notInstalled:
+    DeleteRegKey HKLM "Software\BDMA"
+    DeleteRegKey HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\BDMA"
     StrCpy $IsInstalled "0"
     StrCpy $UserChoice "1"
-  ${EndIf}
 FunctionEnd
 
 ; ── Dialog 3 lựa chọn ───────────────────────────────────────────
@@ -116,11 +125,9 @@ FunctionEnd
 
 Function EnsureAppClosed
   ClearErrors
-  nsExec::ExecToStack 'powershell -NoProfile -ExecutionPolicy Bypass -Command "try { $client = New-Object Net.Sockets.TcpClient(''127.0.0.1'', 54321); if ($client.Connected) { $client.Close(); exit 1 } } catch {} exit 0"'
-  Pop $0
-  Pop $1
+  ExecWait '"$SYSDIR\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -ExecutionPolicy Bypass -Command "try { $client = New-Object Net.Sockets.TcpClient; $async = $client.BeginConnect(''127.0.0.1'', 54321, $null, $null); if ($async.AsyncWaitHandle.WaitOne(300)) { $client.EndConnect($async); if ($client.Connected) { $client.Close(); exit 1 } } } catch {} exit 0"' $0
 
-  ${If} $0 != 0
+  ${If} $0 == 1
     MessageBox MB_ICONEXCLAMATION|MB_OK "BDMA đang chạy. Vui lòng tắt ứng dụng trước khi tiếp tục."
     SetErrors
   ${EndIf}
